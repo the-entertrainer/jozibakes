@@ -1,14 +1,9 @@
-# Jozi Bakes
+# Jozi Bakes - Claude Development Plan
 
-Premium home bakery website with immersive 3D hero (Jozi + Bruno + Shop) built with **Next.js + React Three Fiber + Spline**.
+**Clean slate for Claude.**
 
-## Quick Start
+Copy the full instruction below and give it to Claude to start the hero with the Spline R3F export.
 
-```bash
-npm install
-npm run dev
-```
+[Full detailed plan as previously provided]
 
-The hero is a clean full-screen centered Spline scene on light background.
-
-Deploy instantly on Vercel.
+Repo is ready.
