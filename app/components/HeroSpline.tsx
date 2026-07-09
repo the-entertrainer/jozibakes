@@ -6,24 +6,48 @@ import type { Application, SPEObject } from '@splinetool/runtime';
 
 const SCENE_URL = 'https://prod.spline.design/Le2iIYYasafjz8Ib/scene.splinecode';
 
-/** Approximate world-unit footprint of the diorama (shop + trees). */
-const SCENE_WIDTH = 300;
-const SCENE_HEIGHT = 240;
-/** Camera orbit radius authored in the scene (camera sits at z=1000). */
-const ORBIT_RADIUS = 1000;
-/** Full-scroll orbit sweep (rad). ~49° keeps the modeled faces in view —
-    beyond ~90° the diorama's blank back panel would show. */
-const ORBIT_SWEEP = 0.85;
-/** Full-scroll extra zoom: the camera ends 35% closer. */
-const ZOOM_IN = 0.35;
-/** Full-scroll camera drop toward Jozi & Bruno (world units). */
-const FOCUS_DROP = 22;
+/**
+ * Approximate world-unit footprint of the whole diorama (shop + trees) and
+ * Jozi & Bruno's world positions — from the current Spline export (Shop
+ * scale 4, Jozi scale 100 @ x=0, Bruno scale 70 @ x=34.04). These scale with
+ * the scene, so re-derive them (via screenshots) if the scene is re-exported
+ * at a different scale again.
+ */
+const SCENE_WIDTH = 706;
+const SCENE_HEIGHT = 565;
 
-/** The runtime keeps its THREE camera private; we only touch zoom on it. */
-type InternalCamera = {
-  zoom: number;
-  updateProjectionMatrix: () => void;
+const JOZI_X = 0;
+const BRUNO_X = 34.04;
+/** Midpoint between Jozi & Bruno — the close-up pan target on portrait. */
+const CLOSE_TARGET_X_PORTRAIT = (JOZI_X + BRUNO_X) / 2;
+/** Close-up camera height on portrait, biased up toward faces/torsos. */
+const CLOSE_CAMERA_Y_PORTRAIT = 105;
+/** How much closer the portrait close-up zoom is vs. the wide fit. */
+const CLOSE_ZOOM_MULTIPLIER_PORTRAIT = 4.2;
+
+/**
+ * Landscape's height-bound wide zoom (see fitCamera) is already much higher
+ * than portrait's width-bound one, so the same zoom multiplier and pan
+ * distance wildly overshoot on desktop — found empirically by polling the
+ * live camera/zoom directly in the browser (not derivable from the wide
+ * framing's math). Re-derive these three via the same technique if the
+ * scene is re-exported at a different scale.
+ */
+const CLOSE_TARGET_X_LANDSCAPE = 430;
+const CLOSE_CAMERA_Y_LANDSCAPE = 140;
+const CLOSE_ZOOM_LANDSCAPE = 3.5;
+
+/** Renderer/pixel-ratio internals the runtime keeps private but exposes at runtime. */
+type InternalRenderer = { setPixelRatio: (ratio: number) => void };
+type InternalCamera = { zoom: number; updateProjectionMatrix: () => void };
+type InternalApp = Application & {
+  _renderer?: InternalRenderer;
+  _resize?: () => void;
+  _camera?: InternalCamera;
 };
+
+/** Cap device pixel ratio for crispness vs. GPU load on an animated scene. */
+const MAX_PIXEL_RATIO = 2;
 
 function fitCamera(width: number, height: number) {
   const portrait = height > width;
@@ -33,9 +57,16 @@ function fitCamera(width: number, height: number) {
     (height * (portrait ? 0.52 : short ? 0.52 : 0.62)) / SCENE_HEIGHT;
   return {
     zoom: Math.min(widthZoom, heightZoom),
-    cameraY: portrait ? 112 : short ? 96 : 128,
+    cameraY: portrait ? 264 : short ? 226 : 301,
+    closeTargetX: portrait ? CLOSE_TARGET_X_PORTRAIT : CLOSE_TARGET_X_LANDSCAPE,
+    closeCameraY: portrait ? CLOSE_CAMERA_Y_PORTRAIT : CLOSE_CAMERA_Y_LANDSCAPE,
+    closeZoom: portrait
+      ? Math.min(widthZoom, heightZoom) * CLOSE_ZOOM_MULTIPLIER_PORTRAIT
+      : CLOSE_ZOOM_LANDSCAPE,
   };
 }
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 export default function HeroSpline({
   stageRef,
@@ -47,7 +78,7 @@ export default function HeroSpline({
   onReady: () => void;
 }) {
   const [sceneUrl, setSceneUrl] = useState<string | null>(null);
-  const appRef = useRef<Application | null>(null);
+  const appRef = useRef<InternalApp | null>(null);
   const cameraRef = useRef<SPEObject | null>(null);
 
   // Stream the scene ourselves so the loading screen can show real progress;
@@ -88,8 +119,9 @@ export default function HeroSpline({
     };
   }, [onProgress]);
 
-  // Camera driver: scroll orbit + zoom-in, pointer parallax, idle drift.
-  // All values are eased every frame, so scrolling feels buttery.
+  // Camera driver: scroll pans + zooms the camera in toward Jozi & Bruno
+  // (no rotation/orbit — same front-on angle throughout), plus a subtle
+  // pointer/touch parallax offset. All values are eased every frame.
   useEffect(() => {
     const reducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
@@ -118,9 +150,8 @@ export default function HeroSpline({
     }
 
     let raf = 0;
-    let theta = 0;
     let smooth = 0; // eased scroll progress
-    let lastTheta = NaN;
+    let lastX = NaN;
     let lastY = NaN;
     let lastZoom = NaN;
     let last = performance.now();
@@ -144,35 +175,30 @@ export default function HeroSpline({
       }
       smooth += (p - smooth) * (reducedMotion ? 1 : Math.min(dt * 5, 1));
 
-      const parallax = reducedMotion ? 0 : pointer.x * 0.055;
-      const targetTheta = smooth * ORBIT_SWEEP + parallax;
-      theta += (targetTheta - theta) * (reducedMotion ? 1 : Math.min(dt * 3, 1));
-
       const fit = fitCamera(window.innerWidth, window.innerHeight);
-      const camY =
-        fit.cameraY -
-        FOCUS_DROP * smooth +
-        (reducedMotion ? 0 : pointer.y * -6);
-      const zoom = fit.zoom * (1 + ZOOM_IN * smooth);
+      const parallaxX = reducedMotion ? 0 : pointer.x * 14;
+      const parallaxY = reducedMotion ? 0 : pointer.y * -9;
+
+      const camX = lerp(0, fit.closeTargetX, smooth) + parallaxX;
+      const camY = lerp(fit.cameraY, fit.closeCameraY, smooth) + parallaxY;
+      const zoom = lerp(fit.zoom, fit.closeZoom, smooth);
 
       // Only touch the camera when something meaningfully changed, so the
       // runtime's temporal AA can converge to a crisp frame at rest.
       // (NaN-safe: the first frame must always write.)
       const settled =
-        Math.abs(theta - lastTheta) <= 1e-4 &&
-        Math.abs(camY - lastY) <= 1e-2 &&
+        Math.abs(camX - lastX) <= 1e-3 &&
+        Math.abs(camY - lastY) <= 1e-3 &&
         Math.abs(zoom - lastZoom) <= 1e-4;
       if (settled) return;
-      lastTheta = theta;
+      lastX = camX;
       lastY = camY;
       lastZoom = zoom;
 
-      cam.position.x = ORBIT_RADIUS * Math.sin(theta);
-      cam.position.z = ORBIT_RADIUS * Math.cos(theta);
+      cam.position.x = camX;
       cam.position.y = camY;
-      cam.rotation.y = theta;
 
-      const three = (app as unknown as { _camera?: InternalCamera })._camera;
+      const three = app._camera;
       if (three) {
         three.zoom = zoom;
         three.updateProjectionMatrix();
@@ -196,8 +222,22 @@ export default function HeroSpline({
     <Spline
       scene={sceneUrl}
       onLoad={(app: Application) => {
-        appRef.current = app;
+        const internal = app as InternalApp;
+        appRef.current = internal;
         cameraRef.current = app.findObjectByName('Camera') ?? null;
+
+        // The scene's Spline publish settings bake in a low mobile pixel
+        // ratio (a fixed low-res buffer stretched to fill the screen),
+        // which reads as pixelated on phones. Override it after load, then
+        // force a resize so the drawing buffer is actually reallocated at
+        // the new ratio (setPixelRatio alone doesn't reallocate it) — this
+        // sticks across future resizes/orientation changes since _resize()
+        // never re-touches pixel ratio itself.
+        internal._renderer?.setPixelRatio(
+          Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO),
+        );
+        internal._resize?.();
+
         onReady();
       }}
       style={{ width: '100%', height: '100%' }}

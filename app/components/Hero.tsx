@@ -27,6 +27,7 @@ export default function Hero() {
   const [progress, setProgress] = useState(0);
   const [ready, setReady] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [headerOpacity, setHeaderOpacity] = useState(1);
 
   const onProgress = useCallback((p: number) => setProgress(p), []);
   const onReady = useCallback(() => {
@@ -35,7 +36,18 @@ export default function Hero() {
   }, []);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
+    const onScroll = () => {
+      setScrolled(window.scrollY > 60);
+      // Fade the title out early in the push-in so it doesn't fight with
+      // the diorama's own "Jozi Bakes" sign once the close-up arrives.
+      const stage = stageRef.current;
+      if (stage) {
+        const rect = stage.getBoundingClientRect();
+        const range = rect.height - window.innerHeight;
+        const p = range > 0 ? Math.min(Math.max(-rect.top / range, 0), 1) : 0;
+        setHeaderOpacity(Math.max(0, 1 - p / 0.35));
+      }
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
@@ -74,7 +86,10 @@ export default function Hero() {
 
         {/* typography overlay */}
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-between px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]">
-          <header className="flex flex-col items-center text-center">
+          <header
+            className="flex flex-col items-center text-center transition-opacity duration-150 ease-out"
+            style={{ opacity: headerOpacity }}
+          >
             <p
               className="glass-chip animate-fade-up rounded-full px-4 py-1.5 text-[0.65rem] font-bold tracking-[0.22em] text-maroon uppercase sm:text-xs"
               style={{ animationDelay: '0.15s' }}
