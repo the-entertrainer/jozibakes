@@ -1,7 +1,128 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  /* Jozi Bakes brand palette (from reference collage) */
+  --color-maroon: #8b2e1f;
+  --color-maroon-deep: #6e2115;
+  --color-cream: #fdf8f0;
+  --color-cream-warm: #fbf5e5;
+  --color-cocoa: #5c4033;
+  --color-linen: #f5ede4;
+  --color-jozi-red: #c41e3a;
+  --color-jozi-brick: #a52a2a;
+
+  --font-display: var(--font-fraunces), 'Fraunces', Georgia, serif;
+  --font-body: var(--font-nunito), 'Nunito Sans', system-ui, sans-serif;
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-fade-up: fade-up 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-drift: drift 14s linear infinite;
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes drift {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: 240px 480px;
+    }
+  }
+}
+
+html,
+body {
+  height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
 
 body {
-  background: #fbf5e5;
+  background: var(--color-cream-warm);
+  color: var(--color-cocoa);
+  font-family: var(--font-body);
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Full dynamic-viewport hero height with safe-area support */
+.h-hero {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Soft warm vignette behind the diorama */
+.hero-glow {
+  background:
+    radial-gradient(58% 42% at 50% 56%, rgba(255, 236, 200, 0.9) 0%, rgba(253, 244, 227, 0.35) 55%, rgba(251, 245, 229, 0) 100%),
+    radial-gradient(120% 90% at 50% 108%, rgba(139, 46, 31, 0.1) 0%, rgba(139, 46, 31, 0) 55%);
+}
+
+/* Fine grain so large cream fields don't feel flat on big screens */
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.04'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Glassy cream chip */
+.glass-chip {
+  background: color-mix(in srgb, var(--color-cream) 62%, transparent);
+  backdrop-filter: blur(10px) saturate(1.15);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  border: 1px solid color-mix(in srgb, var(--color-maroon) 14%, transparent);
+  box-shadow:
+    0 1px 2px rgba(92, 64, 51, 0.06),
+    0 8px 28px -12px rgba(92, 64, 51, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+/* Short landscape viewports (phones rotated): compress the header so
+   the diorama keeps clear air around it */
+@media (max-height: 540px) and (orientation: landscape) {
+  .hero-title {
+    font-size: 2.75rem !important;
+  }
+  .hero-tagline {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
