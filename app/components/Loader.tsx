@@ -1,19 +1,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useProgress } from '@react-three/drei';
 
 /**
  * Branded loading screen shown while the ~20 MB Spline scene streams in.
  * Cream backdrop, maroon wordmark, real progress, then a soft fade-out.
  */
-export default function Loader() {
-  const { progress, active } = useProgress();
+export default function Loader({
+  progress,
+  ready,
+}: {
+  progress: number;
+  ready: boolean;
+}) {
   const [done, setDone] = useState(false);
   const [gone, setGone] = useState(false);
 
   useEffect(() => {
-    if (!active && progress >= 100) {
+    if (ready) {
       // small grace period so the scene's first frame is already painted
       const t1 = setTimeout(() => setDone(true), 350);
       const t2 = setTimeout(() => setGone(true), 1350);
@@ -22,7 +26,7 @@ export default function Loader() {
         clearTimeout(t2);
       };
     }
-  }, [active, progress]);
+  }, [ready]);
 
   if (gone) return null;
 
@@ -37,7 +41,7 @@ export default function Loader() {
         done ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}
     >
-      {/* whisk-and-heart mark */}
+      {/* heart mark */}
       <div className="animate-float">
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
           <path

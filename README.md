@@ -2,13 +2,13 @@
 
 Premium single-page website for **Jozi Bakes** — a home bakery in Kharghar, Navi Mumbai.
 
-Phase 1: full-screen hero with a 3D Spline diorama of the bakery, starring **Jozi** (the baker) and **Bruno** (the dog), rendered with React Three Fiber.
+Phase 1: full-screen hero with a 3D Spline diorama of the bakery, starring **Jozi** (the baker) and **Bruno** (the dog). The Spline runtime plays their authored idle animations, and scrolling orbits the camera around the shop while easing it closer.
 
 ## Stack
 
 - Next.js 15 (App Router) + TypeScript
 - Tailwind CSS v4
-- React Three Fiber 9 + drei + `@splinetool/r3f-spline`
+- `@splinetool/react-spline` (Spline runtime; scroll-driven camera)
 - Deployed on Vercel
 
 ## Develop
