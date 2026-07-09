@@ -17,29 +17,57 @@ const SCENE_WIDTH = 706;
 const SCENE_HEIGHT = 565;
 
 const JOZI_X = 0;
-const BRUNO_X = 34.04;
-/** Midpoint between Jozi & Bruno — the close-up pan target on portrait. */
-const CLOSE_TARGET_X_PORTRAIT = (JOZI_X + BRUNO_X) / 2;
-/** Close-up camera height on portrait, biased up toward faces/torsos. */
-const CLOSE_CAMERA_Y_PORTRAIT = 105;
-/** How much closer the portrait close-up zoom is vs. the wide fit. */
-const CLOSE_ZOOM_MULTIPLIER_PORTRAIT = 4.2;
+/**
+ * A point near Jozi's head/shoulder (world space) — the menu's anchor.
+ * Portrait's menu sits below her (needs the anchor a bit higher, at her
+ * hat, so the menu clears her whole body); landscape's sits beside her at
+ * shoulder height. Tuned per aspect ratio like the camera framing itself.
+ */
+const JOZI_ANCHOR_Y_PORTRAIT = 120;
+const JOZI_ANCHOR_Y_LANDSCAPE = 92;
+const JOZI_ANCHOR_Z = 212.2;
+
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
 
 /**
- * Landscape's height-bound wide zoom (see fitCamera) is already much higher
- * than portrait's width-bound one, so the same zoom multiplier and pan
- * distance wildly overshoot on desktop — found empirically by polling the
- * live camera/zoom directly in the browser (not derivable from the wide
- * framing's math). Re-derive these three via the same technique if the
+ * "Engaged" framing: a subtle push toward Jozi & Bruno on tap — not the
+ * dramatic close-up the old scroll version used. Rather than pick new
+ * numbers from scratch, this is a fixed ~40% step along the *same* wide →
+ * full-close-up path that was already validated screenshot-by-screenshot
+ * (old CLOSE_* constants), so pan/zoom/height stay proportionally
+ * consistent instead of drifting independently. Re-derive ENGAGE_T (and
+ * the full-close targets it interpolates toward) via screenshots if the
  * scene is re-exported at a different scale.
  */
-const CLOSE_TARGET_X_LANDSCAPE = 430;
-const CLOSE_CAMERA_Y_LANDSCAPE = 140;
-const CLOSE_ZOOM_LANDSCAPE = 3.5;
+const ENGAGE_T = 0.7;
+const FULL_CLOSE_TARGET_X_PORTRAIT = 17.02;
+const FULL_CLOSE_CAMERA_Y_PORTRAIT = 105;
+const FULL_CLOSE_ZOOM_MULTIPLIER_PORTRAIT = 4.2;
+const ENGAGED_TARGET_X_PORTRAIT = lerp(0, FULL_CLOSE_TARGET_X_PORTRAIT, ENGAGE_T);
+const ENGAGED_CAMERA_Y_PORTRAIT = lerp(264, FULL_CLOSE_CAMERA_Y_PORTRAIT, ENGAGE_T);
+const ENGAGED_ZOOM_MULTIPLIER_PORTRAIT = lerp(1, FULL_CLOSE_ZOOM_MULTIPLIER_PORTRAIT, ENGAGE_T);
 
-/** Renderer/pixel-ratio internals the runtime keeps private but exposes at runtime. */
+const FULL_CLOSE_TARGET_X_LANDSCAPE = 430;
+const FULL_CLOSE_CAMERA_Y_LANDSCAPE = 140;
+/** Landscape's full-close zoom was an empirically-found absolute value, not
+    a multiplier (see the earlier framing investigation), so the engaged
+    zoom below is derived dynamically per-viewport inside fitCamera(). */
+const FULL_CLOSE_ZOOM_LANDSCAPE = 3.5;
+const ENGAGED_TARGET_X_LANDSCAPE = lerp(0, FULL_CLOSE_TARGET_X_LANDSCAPE, ENGAGE_T);
+const ENGAGED_CAMERA_Y_LANDSCAPE = lerp(301, FULL_CLOSE_CAMERA_Y_LANDSCAPE, ENGAGE_T);
+
+/** Renderer/pixel-ratio/projection internals the runtime keeps private but exposes at runtime. */
 type InternalRenderer = { setPixelRatio: (ratio: number) => void };
-type InternalCamera = { zoom: number; updateProjectionMatrix: () => void };
+type Matrix4Like = { elements: number[] };
+type InternalCamera = {
+  zoom: number;
+  updateProjectionMatrix: () => void;
+  updateMatrixWorld: (force?: boolean) => void;
+  matrixWorldInverse: Matrix4Like;
+  projectionMatrix: Matrix4Like;
+};
 type InternalApp = Application & {
   _renderer?: InternalRenderer;
   _resize?: () => void;
@@ -55,31 +83,61 @@ function fitCamera(width: number, height: number) {
   const widthZoom = (width * (portrait ? 0.97 : 0.8)) / SCENE_WIDTH;
   const heightZoom =
     (height * (portrait ? 0.52 : short ? 0.52 : 0.62)) / SCENE_HEIGHT;
+  const zoom = Math.min(widthZoom, heightZoom);
   return {
-    zoom: Math.min(widthZoom, heightZoom),
+    zoom,
     cameraY: portrait ? 264 : short ? 226 : 301,
-    closeTargetX: portrait ? CLOSE_TARGET_X_PORTRAIT : CLOSE_TARGET_X_LANDSCAPE,
-    closeCameraY: portrait ? CLOSE_CAMERA_Y_PORTRAIT : CLOSE_CAMERA_Y_LANDSCAPE,
-    closeZoom: portrait
-      ? Math.min(widthZoom, heightZoom) * CLOSE_ZOOM_MULTIPLIER_PORTRAIT
-      : CLOSE_ZOOM_LANDSCAPE,
+    engagedTargetX: portrait ? ENGAGED_TARGET_X_PORTRAIT : ENGAGED_TARGET_X_LANDSCAPE,
+    engagedCameraY: portrait ? ENGAGED_CAMERA_Y_PORTRAIT : ENGAGED_CAMERA_Y_LANDSCAPE,
+    engagedZoom: portrait
+      ? zoom * ENGAGED_ZOOM_MULTIPLIER_PORTRAIT
+      : lerp(zoom, FULL_CLOSE_ZOOM_LANDSCAPE, ENGAGE_T),
   };
 }
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+/** Manual re-implementation of THREE.Vector3.project() — world → screen px. */
+function projectToScreen(
+  worldX: number,
+  worldY: number,
+  worldZ: number,
+  camera: InternalCamera,
+  width: number,
+  height: number,
+) {
+  const v = camera.matrixWorldInverse.elements;
+  const vx = v[0] * worldX + v[4] * worldY + v[8] * worldZ + v[12];
+  const vy = v[1] * worldX + v[5] * worldY + v[9] * worldZ + v[13];
+  const vz = v[2] * worldX + v[6] * worldY + v[10] * worldZ + v[14];
+
+  const p = camera.projectionMatrix.elements;
+  const cx = p[0] * vx + p[4] * vy + p[8] * vz + p[12];
+  const cy = p[1] * vx + p[5] * vy + p[9] * vz + p[13];
+  const cw = p[3] * vx + p[7] * vy + p[11] * vz + p[15];
+
+  const ndcX = cx / cw;
+  const ndcY = cy / cw;
+  return {
+    x: (ndcX * 0.5 + 0.5) * width,
+    y: (1 - (ndcY * 0.5 + 0.5)) * height,
+  };
+}
 
 export default function HeroSpline({
-  stageRef,
+  engaged,
+  onJoziScreen,
   onProgress,
   onReady,
 }: {
-  stageRef: React.RefObject<HTMLElement | null>;
+  engaged: boolean;
+  onJoziScreen: (pos: { x: number; y: number } | null) => void;
   onProgress: (pct: number) => void;
   onReady: () => void;
 }) {
   const [sceneUrl, setSceneUrl] = useState<string | null>(null);
   const appRef = useRef<InternalApp | null>(null);
   const cameraRef = useRef<SPEObject | null>(null);
+  const engagedRef = useRef(engaged);
+  engagedRef.current = engaged;
 
   // Stream the scene ourselves so the loading screen can show real progress;
   // the runtime then loads instantly from the blob we hand it.
@@ -119,9 +177,10 @@ export default function HeroSpline({
     };
   }, [onProgress]);
 
-  // Camera driver: scroll pans + zooms the camera in toward Jozi & Bruno
-  // (no rotation/orbit — same front-on angle throughout), plus a subtle
-  // pointer/touch parallax offset. All values are eased every frame.
+  // Camera driver: eases toward a subtle "engaged" framing on tap (no
+  // rotation/orbit — same front-on angle throughout), plus a gentle
+  // pointer/touch parallax offset. Reports Jozi's projected screen position
+  // each time the camera actually changes, so the RPG menu can track her.
   useEffect(() => {
     const reducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
@@ -150,7 +209,7 @@ export default function HeroSpline({
     }
 
     let raf = 0;
-    let smooth = 0; // eased scroll progress
+    let smooth = 0; // eased 0 (wide) -> 1 (engaged)
     let lastX = NaN;
     let lastY = NaN;
     let lastZoom = NaN;
@@ -165,23 +224,16 @@ export default function HeroSpline({
       const cam = cameraRef.current;
       if (!app || !cam) return;
 
-      // scroll progress across the tall hero stage
-      let p = 0;
-      const stage = stageRef.current;
-      if (stage) {
-        const rect = stage.getBoundingClientRect();
-        const range = rect.height - window.innerHeight;
-        if (range > 0) p = Math.min(Math.max(-rect.top / range, 0), 1);
-      }
-      smooth += (p - smooth) * (reducedMotion ? 1 : Math.min(dt * 5, 1));
+      const target = engagedRef.current ? 1 : 0;
+      smooth += (target - smooth) * (reducedMotion ? 1 : Math.min(dt * 4, 1));
 
       const fit = fitCamera(window.innerWidth, window.innerHeight);
-      const parallaxX = reducedMotion ? 0 : pointer.x * 14;
-      const parallaxY = reducedMotion ? 0 : pointer.y * -9;
+      const parallaxX = reducedMotion ? 0 : pointer.x * 8;
+      const parallaxY = reducedMotion ? 0 : pointer.y * -5;
 
-      const camX = lerp(0, fit.closeTargetX, smooth) + parallaxX;
-      const camY = lerp(fit.cameraY, fit.closeCameraY, smooth) + parallaxY;
-      const zoom = lerp(fit.zoom, fit.closeZoom, smooth);
+      const camX = lerp(JOZI_X, fit.engagedTargetX, smooth) + parallaxX;
+      const camY = lerp(fit.cameraY, fit.engagedCameraY, smooth) + parallaxY;
+      const zoom = lerp(fit.zoom, fit.engagedZoom, smooth);
 
       // Only touch the camera when something meaningfully changed, so the
       // runtime's temporal AA can converge to a crisp frame at rest.
@@ -202,6 +254,21 @@ export default function HeroSpline({
       if (three) {
         three.zoom = zoom;
         three.updateProjectionMatrix();
+        three.updateMatrixWorld(true);
+        const anchorY =
+          window.innerHeight > window.innerWidth
+            ? JOZI_ANCHOR_Y_PORTRAIT
+            : JOZI_ANCHOR_Y_LANDSCAPE;
+        onJoziScreen(
+          projectToScreen(
+            JOZI_X,
+            anchorY,
+            JOZI_ANCHOR_Z,
+            three,
+            window.innerWidth,
+            window.innerHeight,
+          ),
+        );
       }
       app.requestRender?.();
     };
@@ -214,7 +281,7 @@ export default function HeroSpline({
       window.removeEventListener('touchstart', onTouch);
       window.removeEventListener('touchend', onTouchEnd);
     };
-  }, [stageRef]);
+  }, [onJoziScreen]);
 
   if (!sceneUrl) return null;
 

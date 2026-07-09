@@ -52,6 +52,7 @@
 html,
 body {
   height: 100%;
+  overflow: hidden;
 }
 
 html {
@@ -133,6 +134,49 @@ body {
     0 1px 2px rgba(92, 64, 51, 0.06),
     0 8px 28px -12px rgba(92, 64, 51, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+/* RPG-style dialogue box for the floating menu beside Jozi */
+.rpg-menu {
+  position: relative;
+  padding: 0.9rem;
+  border-radius: 1rem;
+  background: linear-gradient(160deg, var(--color-cream) 0%, var(--color-linen) 100%);
+  border: 2px solid color-mix(in srgb, var(--color-maroon) 55%, transparent);
+  box-shadow:
+    0 12px 32px -10px rgba(92, 64, 51, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.rpg-menu::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translateY(-50%) rotate(45deg);
+  background: var(--color-cream);
+  border: 2px solid color-mix(in srgb, var(--color-maroon) 55%, transparent);
+}
+
+.rpg-menu-tail-left::after {
+  left: -8px;
+  border-right: none;
+  border-top: none;
+}
+
+.rpg-menu-tail-right::after {
+  right: -8px;
+  border-left: none;
+  border-bottom: none;
+}
+
+.rpg-menu-tail-top::after {
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  border-right: none;
+  border-bottom: none;
 }
 
 /* Short landscape viewports (phones rotated): compress the header so
