@@ -1,9 +1,23 @@
-# Jozi Bakes - Claude Development Plan
+# Jozi Bakes
 
-**Clean slate for Claude.**
+Premium single-page website for **Jozi Bakes** — a home bakery in Kharghar, Navi Mumbai.
 
-Copy the full instruction below and give it to Claude to start the hero with the Spline R3F export.
+Phase 1: full-screen hero with a 3D Spline diorama of the bakery, starring **Jozi** (the baker) and **Bruno** (the dog), rendered with React Three Fiber.
 
-[Full detailed plan as previously provided]
+## Stack
 
-Repo is ready.
+- Next.js 15 (App Router) + TypeScript
+- Tailwind CSS v4
+- React Three Fiber 9 + drei + `@splinetool/r3f-spline`
+- Deployed on Vercel
+
+## Develop
+
+```bash
+npm install
+npm run dev
+```
+
+## Brand
+
+Deep maroon `#8B2E1F` on warm cream `#FDF8F0` / `#fbf5e5`, cocoa `#5C4033`, accents `#C41E3A`. Typography: Fraunces (display) + Nunito Sans (body).
