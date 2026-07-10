@@ -136,57 +136,311 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
-/* RPG-style dialogue box for the floating menu beside Jozi */
-.rpg-menu {
-  position: relative;
-  padding: 0.9rem;
-  border-radius: 1rem;
-  background: linear-gradient(160deg, var(--color-cream) 0%, var(--color-linen) 100%);
-  border: 2px solid color-mix(in srgb, var(--color-maroon) 55%, transparent);
-  box-shadow:
-    0 12px 32px -10px rgba(92, 64, 51, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+/* ---- Isometric scene grade: warm centre glow + vignette + ground falloff ---- */
+.scene-grade {
+  background:
+    radial-gradient(72% 56% at 50% 40%, rgba(255, 244, 224, 0.3) 0%, rgba(255, 244, 224, 0) 60%),
+    radial-gradient(122% 104% at 50% 44%, rgba(139, 46, 31, 0) 54%, rgba(110, 33, 21, 0.16) 100%),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0) 58%, rgba(92, 64, 51, 0.12) 100%);
+  mix-blend-mode: multiply;
 }
 
-.rpg-menu::after {
-  content: '';
-  position: absolute;
-  top: 50%;
+/* ---- Hotspot markers (positioned imperatively by the scene RAF loop) ---- */
+.hotspot {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  will-change: transform, opacity;
+  -webkit-tap-highlight-color: transparent;
+}
+.hotspot-dot {
   width: 14px;
   height: 14px;
-  transform: translateY(-50%) rotate(45deg);
+  border-radius: 9999px;
+  background: var(--color-jozi-red);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(139, 46, 31, 0.55);
+}
+.hotspot-ring {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-jozi-red);
+  animation: hotspot-pulse 1.9s ease-out infinite;
+}
+@keyframes hotspot-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.7);
+    opacity: 0;
+  }
+}
+.hotspot-label {
+  position: absolute;
+  top: calc(50% + 15px);
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--color-cream) 88%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--color-maroon);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.24rem 0.55rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--color-maroon) 16%, transparent);
+  box-shadow: 0 4px 14px -6px rgba(92, 64, 51, 0.5);
+}
+
+/* pulsing dot in the "tap a glowing spot" hint chip */
+.hint-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--color-jozi-red);
+  animation: hint-glow 1.9s ease-out infinite;
+}
+@keyframes hint-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(196, 30, 58, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgba(196, 30, 58, 0);
+  }
+}
+
+/* ---- Bottom sheet (menu / about / cart) ---- */
+.sheet-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: rgba(60, 40, 32, 0.28);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.sheet-scrim.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.sheet {
+  position: absolute;
+  z-index: 41;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-width: 30rem;
+  margin: 0 auto;
+  max-height: 82dvh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+  background: linear-gradient(180deg, var(--color-cream) 0%, var(--color-cream-warm) 100%);
+  border-radius: 1.4rem 1.4rem 0 0;
+  border: 1px solid color-mix(in srgb, var(--color-maroon) 12%, transparent);
+  box-shadow: 0 -12px 40px -12px rgba(92, 64, 51, 0.45);
+  transform: translateY(102%);
+  transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sheet.is-open {
+  transform: translateY(0);
+}
+.sheet-grip {
+  width: 38px;
+  height: 4px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-cocoa) 25%, transparent);
+  margin: 0.7rem auto 0.4rem;
+  flex: none;
+}
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.2rem;
+  padding-bottom: 0.5rem;
+  flex: none;
+}
+.sheet-body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.5rem;
+}
+.sheet-footer {
+  flex: none;
+  padding-top: 0.6rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-maroon) 8%, transparent);
+}
+
+/* category tabs */
+.tabs {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.6rem;
+  flex: none;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+.tab {
+  flex: none;
+  padding: 0.35rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-cocoa);
+  background: color-mix(in srgb, var(--color-linen) 80%, transparent);
+  border: 1px solid transparent;
+  transition: background 0.15s, color 0.15s;
+}
+.tab.is-active {
+  background: var(--color-maroon);
+  color: var(--color-cream);
+}
+
+/* menu / cart rows */
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-cocoa) 8%, transparent);
+}
+.menu-row:last-child {
+  border-bottom: none;
+}
+.menu-emoji {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--color-linen) 85%, transparent);
+  flex: none;
+}
+.add-btn {
+  flex: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--color-cream);
+  background: var(--color-maroon);
+  box-shadow: 0 4px 12px -4px rgba(139, 46, 31, 0.6);
+  transition: transform 0.1s;
+}
+.add-btn:active {
+  transform: scale(0.95);
+}
+.stepper {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
   background: var(--color-cream);
-  border: 2px solid color-mix(in srgb, var(--color-maroon) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-maroon) 18%, transparent);
+  border-radius: 9999px;
+  padding: 0.15rem;
+}
+.stepper button {
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-maroon);
+  display: grid;
+  place-items: center;
+}
+.stepper button:active {
+  background: var(--color-linen);
+}
+.stepper span {
+  min-width: 20px;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--color-cocoa);
 }
 
-.rpg-menu-tail-left::after {
-  left: -8px;
-  border-right: none;
-  border-top: none;
+/* primary call-to-action */
+.cta-btn {
+  padding: 0.8rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--color-cream);
+  background: linear-gradient(180deg, var(--color-maroon), var(--color-maroon-deep));
+  box-shadow: 0 8px 20px -8px rgba(139, 46, 31, 0.7);
+  transition: transform 0.1s;
+}
+.cta-btn:active {
+  transform: scale(0.98);
 }
 
-.rpg-menu-tail-right::after {
-  right: -8px;
-  border-left: none;
-  border-bottom: none;
+/* floating cart button */
+.cart-fab {
+  position: absolute;
+  z-index: 39;
+  right: calc(env(safe-area-inset-right) + 1rem);
+  bottom: calc(env(safe-area-inset-bottom) + 1.1rem);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.95rem 0.6rem 0.7rem;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, var(--color-maroon), var(--color-maroon-deep));
+  color: var(--color-cream);
+  box-shadow: 0 10px 26px -8px rgba(139, 46, 31, 0.7);
+  animation: fab-in 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes fab-in {
+  from {
+    transform: translateY(14px) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.cart-fab-icon {
+  font-size: 1.15rem;
+}
+.cart-fab-count {
+  position: absolute;
+  top: -5px;
+  left: 27px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: var(--color-maroon);
+  background: var(--color-cream);
+  border-radius: 9999px;
+  box-shadow: 0 2px 6px -2px rgba(92, 64, 51, 0.5);
+}
+.cart-fab-total {
+  font-size: 0.85rem;
+  font-weight: 800;
 }
 
-.rpg-menu-tail-top::after {
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%) rotate(45deg);
-  border-right: none;
-  border-bottom: none;
-}
-
-/* Short landscape viewports (phones rotated): compress the header so
-   the diorama keeps clear air around it */
+/* Short landscape viewports (phones rotated): compress the header */
 @media (max-height: 540px) and (orientation: landscape) {
   .hero-title {
     font-size: 2.75rem !important;
-  }
-  .hero-tagline {
-    display: none;
   }
 }
 

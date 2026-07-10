@@ -3,82 +3,67 @@
 import { useEffect, useRef, useState } from 'react';
 import Spline from '@splinetool/react-spline';
 import type { Application, SPEObject } from '@splinetool/runtime';
+import { STATIONS } from '../data/stations';
 
 const SCENE_URL = 'https://prod.spline.design/Le2iIYYasafjz8Ib/scene.splinecode';
 
 /**
- * Approximate world-unit footprint of the whole diorama (shop + trees) and
- * Jozi & Bruno's world positions — from the current Spline export (Shop
- * scale 4, Jozi scale 100 @ x=0, Bruno scale 70 @ x=34.04). These scale with
- * the scene, so re-derive them (via screenshots) if the scene is re-exported
- * at a different scale again.
+ * Approximate world-unit footprint of the whole diorama (from the current
+ * Spline export: Shop scale 4, Jozi scale 100 @ x=0, Bruno scale 70 @
+ * x=34.04). Used to fit the isometric zoom. Re-derive via screenshots if the
+ * scene is re-exported at a different scale.
  */
 const SCENE_WIDTH = 706;
 const SCENE_HEIGHT = 565;
 
-const JOZI_X = 0;
 /**
- * A point near Jozi's head/shoulder (world space) — the menu's anchor.
- * Portrait's menu sits below her (needs the anchor a bit higher, at her
- * hat, so the menu clears her whole body); landscape's sits beside her at
- * shoulder height. Tuned per aspect ratio like the camera framing itself.
+ * Isometric framing. The orthographic camera orbits a fixed pivot (ORBIT_*)
+ * at the authored distance, tilted down (ELEV) and turned (AZIM) into a 3/4
+ * diorama view. Everything is centred on x = 0 (Jozi's line) so the diorama
+ * stays centred on screen. These are tuned against screenshots — adjust the
+ * pivot depth / angles here if the view sits off-centre or too steep.
  */
-const JOZI_ANCHOR_Y_PORTRAIT = 120;
-const JOZI_ANCHOR_Y_LANDSCAPE = 92;
-const JOZI_ANCHOR_Z = 212.2;
+const ISO_AZIM = 0.72; // ~41° turn
+const ISO_ELEV = 0.5; // ~29° tilt down
+const ORBIT_PIVOT = { x: 0, y: 95, z: 150 };
+const ISO_ZOOM_FACTOR = 0.94;
+
+/** How far drag can nudge the view before it eases back to the iso rest pose. */
+const AZIM_CLAMP = 0.38; // ~22°
+const ELEV_CLAMP = 0.16; // ~9°
+const DRAG_AZIM_SPEED = 0.0042;
+const DRAG_ELEV_SPEED = 0.0034;
+const DRAG_RETURN = 0.94; // per-frame decay of drag back toward the rest pose
+
+/** Slow breathing sway so the resting diorama still feels alive. */
+const IDLE_SWAY_AMP = 0.04;
+const IDLE_SWAY_OMEGA = (2 * Math.PI) / 22;
+
+const DRAG_THRESHOLD_PX = 6;
+const FALLBACK_RADIUS = 1200;
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
-/**
- * "Engaged" framing: a subtle push toward Jozi & Bruno on tap — not the
- * dramatic close-up the old scroll version used. Rather than pick new
- * numbers from scratch, this is a fixed ~40% step along the *same* wide →
- * full-close-up path that was already validated screenshot-by-screenshot
- * (old CLOSE_* constants), so pan/zoom/height stay proportionally
- * consistent instead of drifting independently. Re-derive ENGAGE_T (and
- * the full-close targets it interpolates toward) via screenshots if the
- * scene is re-exported at a different scale.
- */
-const ENGAGE_T = 0.7;
-const FULL_CLOSE_TARGET_X_PORTRAIT = 17.02;
-const FULL_CLOSE_CAMERA_Y_PORTRAIT = 105;
-const FULL_CLOSE_ZOOM_MULTIPLIER_PORTRAIT = 4.2;
-const ENGAGED_TARGET_X_PORTRAIT = lerp(0, FULL_CLOSE_TARGET_X_PORTRAIT, ENGAGE_T);
-const ENGAGED_CAMERA_Y_PORTRAIT = lerp(264, FULL_CLOSE_CAMERA_Y_PORTRAIT, ENGAGE_T);
-const ENGAGED_ZOOM_MULTIPLIER_PORTRAIT = lerp(1, FULL_CLOSE_ZOOM_MULTIPLIER_PORTRAIT, ENGAGE_T);
+function fitZoom(width: number, height: number) {
+  const portrait = height > width;
+  const short = !portrait && height < 540;
+  const widthZoom = (width * (portrait ? 0.92 : 0.8)) / SCENE_WIDTH;
+  const heightZoom = (height * (portrait ? 0.5 : short ? 0.5 : 0.6)) / SCENE_HEIGHT;
+  return Math.min(widthZoom, heightZoom) * ISO_ZOOM_FACTOR;
+}
 
-const FULL_CLOSE_TARGET_X_LANDSCAPE = 430;
-const FULL_CLOSE_CAMERA_Y_LANDSCAPE = 140;
-/** Landscape's full-close zoom was an empirically-found absolute value, not
-    a multiplier (see the earlier framing investigation), so the engaged
-    zoom below is derived dynamically per-viewport inside fitCamera(). */
-const FULL_CLOSE_ZOOM_LANDSCAPE = 3.5;
-const ENGAGED_TARGET_X_LANDSCAPE = lerp(0, FULL_CLOSE_TARGET_X_LANDSCAPE, ENGAGE_T);
-const ENGAGED_CAMERA_Y_LANDSCAPE = lerp(301, FULL_CLOSE_CAMERA_Y_LANDSCAPE, ENGAGE_T);
-
-/**
- * Idle "turntable": until someone taps, the camera sweeps slowly around the
- * diorama's vertical centre axis so the scene feels alive and self-rotating,
- * while always staying centred. It's a gentle left↔right pendulum rather than
- * a full 360° spin, because the diorama's back isn't modelled to be shown —
- * the sweep keeps the authored front in view the whole time.
- *
- * The sweep passes through azimuth 0 (the authored front-on framing), which
- * is exactly the orientation the tap close-up returns to, so engaging and
- * disengaging blend seamlessly with no snap. ORBIT_AMPLITUDE is the peak
- * azimuth in radians (~19°); ORBIT_OMEGA is the pace (2π / period, ~18 s).
- * Raise ORBIT_AMPLITUDE toward Math.PI for a wider showcase turn.
- */
-const ORBIT_AMPLITUDE = 0.34;
-const ORBIT_OMEGA = (2 * Math.PI) / 18;
-
-/** Renderer/pixel-ratio/projection internals the runtime keeps private but exposes at runtime. */
+/** Renderer/camera internals the runtime keeps private but exposes at runtime. */
 type InternalRenderer = { setPixelRatio: (ratio: number) => void };
 type Matrix4Like = { elements: number[] };
+type Vec3 = { x: number; y: number; z: number; set: (x: number, y: number, z: number) => void };
 type InternalCamera = {
   zoom: number;
+  position: Vec3;
+  up: Vec3;
+  rotation: { x: number; y: number; z: number };
+  lookAt: (x: number, y: number, z: number) => void;
   updateProjectionMatrix: () => void;
   updateMatrixWorld: (force?: boolean) => void;
   matrixWorldInverse: Matrix4Like;
@@ -93,25 +78,7 @@ type InternalApp = Application & {
 /** Cap device pixel ratio for crispness vs. GPU load on an animated scene. */
 const MAX_PIXEL_RATIO = 2;
 
-function fitCamera(width: number, height: number) {
-  const portrait = height > width;
-  const short = !portrait && height < 540; // phone rotated sideways
-  const widthZoom = (width * (portrait ? 0.97 : 0.8)) / SCENE_WIDTH;
-  const heightZoom =
-    (height * (portrait ? 0.52 : short ? 0.52 : 0.62)) / SCENE_HEIGHT;
-  const zoom = Math.min(widthZoom, heightZoom);
-  return {
-    zoom,
-    cameraY: portrait ? 264 : short ? 226 : 301,
-    engagedTargetX: portrait ? ENGAGED_TARGET_X_PORTRAIT : ENGAGED_TARGET_X_LANDSCAPE,
-    engagedCameraY: portrait ? ENGAGED_CAMERA_Y_PORTRAIT : ENGAGED_CAMERA_Y_LANDSCAPE,
-    engagedZoom: portrait
-      ? zoom * ENGAGED_ZOOM_MULTIPLIER_PORTRAIT
-      : lerp(zoom, FULL_CLOSE_ZOOM_LANDSCAPE, ENGAGE_T),
-  };
-}
-
-/** Manual re-implementation of THREE.Vector3.project() — world → screen px. */
+/** Manual THREE.Vector3.project() — world → screen px. */
 function projectToScreen(
   worldX: number,
   worldY: number,
@@ -130,8 +97,8 @@ function projectToScreen(
   const cy = p[1] * vx + p[5] * vy + p[9] * vz + p[13];
   const cw = p[3] * vx + p[7] * vy + p[11] * vz + p[15];
 
-  const ndcX = cx / cw;
-  const ndcY = cy / cw;
+  const ndcX = cx / (cw || 1);
+  const ndcY = cy / (cw || 1);
   return {
     x: (ndcX * 0.5 + 0.5) * width,
     y: (1 - (ndcY * 0.5 + 0.5)) * height,
@@ -139,27 +106,30 @@ function projectToScreen(
 }
 
 export default function HeroSpline({
-  engaged,
-  onJoziScreen,
+  activeStationId,
+  onSelectStation,
+  onBackgroundTap,
   onProgress,
   onReady,
 }: {
-  engaged: boolean;
-  onJoziScreen: (pos: { x: number; y: number } | null) => void;
+  activeStationId: string | null;
+  onSelectStation: (id: string) => void;
+  onBackgroundTap: () => void;
   onProgress: (pct: number) => void;
   onReady: () => void;
 }) {
   const [sceneUrl, setSceneUrl] = useState<string | null>(null);
   const appRef = useRef<InternalApp | null>(null);
   const cameraRef = useRef<SPEObject | null>(null);
-  // Authored camera pose captured on load — the orbit radius (distance to the
-  // scene's centre axis) and the front-on heading it sweeps around.
-  const homeRef = useRef<{ radius: number; headingY: number } | null>(null);
-  const engagedRef = useRef(engaged);
-  engagedRef.current = engaged;
+  const homeRef = useRef<{ radius: number } | null>(null);
+  const markerRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
-  // Stream the scene ourselves so the loading screen can show real progress;
-  // the runtime then loads instantly from the blob we hand it.
+  const activeRef = useRef(activeStationId);
+  activeRef.current = activeStationId;
+
+  // Stream the scene ourselves so the loader can show real progress; the
+  // runtime then loads instantly from the blob we hand it.
   useEffect(() => {
     let cancelled = false;
     let blobUrl: string | null = null;
@@ -176,9 +146,7 @@ export default function HeroSpline({
           if (done) break;
           chunks.push(value);
           received += value.length;
-          if (total && !cancelled) {
-            onProgress(Math.min(99, (received / total) * 100));
-          }
+          if (total && !cancelled) onProgress(Math.min(99, (received / total) * 100));
         }
         if (cancelled) return;
         blobUrl = URL.createObjectURL(
@@ -186,7 +154,6 @@ export default function HeroSpline({
         );
         setSceneUrl(blobUrl);
       } catch {
-        // fall back to letting the runtime fetch it directly
         if (!cancelled) setSceneUrl(SCENE_URL);
       }
     })();
@@ -196,46 +163,62 @@ export default function HeroSpline({
     };
   }, [onProgress]);
 
-  // Camera driver. Idle: a slow turntable sweep around the diorama's centre
-  // axis (always centred, always front-facing). On tap: eases to a centred
-  // close-up of Jozi at the authored front-on heading, and a subtle
-  // pointer/touch parallax fades in. Reports Jozi's projected screen position
-  // while engaged so the RPG menu can anchor to her.
+  // Camera driver + hotspot projection. Drives the orthographic camera into an
+  // isometric pose via lookAt (mirrored onto the Spline camera node so the
+  // runtime's own render ticks keep the pose), eases to a station close-up on
+  // selection, and imperatively positions the hotspot markers each frame so
+  // there is no per-frame React state churn.
   useEffect(() => {
-    const reducedMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const pointer = { x: 0, y: 0 };
-    const onMouse = (e: MouseEvent) => {
-      pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
-      pointer.y = (e.clientY / window.innerHeight) * 2 - 1;
+    // Drag-to-orbit state (screen-space), eased into the pose each frame.
+    let pointerDown = false;
+    let dragged = false;
+    let startX = 0;
+    let startY = 0;
+    let baseAzim = 0;
+    let baseElev = 0;
+    let targetAzim = 0;
+    let targetElev = 0;
+    let azim = 0;
+    let elev = 0;
+
+    const surface = rootRef.current?.querySelector<HTMLElement>('[data-drag-surface]');
+    const onDown = (e: PointerEvent) => {
+      pointerDown = true;
+      dragged = false;
+      startX = e.clientX;
+      startY = e.clientY;
+      baseAzim = targetAzim;
+      baseElev = targetElev;
+      surface?.setPointerCapture(e.pointerId);
     };
-    const onTouch = (e: TouchEvent) => {
-      const t = e.touches[0];
-      if (!t) return;
-      pointer.x = (t.clientX / window.innerWidth) * 2 - 1;
-      pointer.y = (t.clientY / window.innerHeight) * 2 - 1;
+    const onMove = (e: PointerEvent) => {
+      if (!pointerDown || reducedMotion) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (!dragged && Math.hypot(dx, dy) > DRAG_THRESHOLD_PX) dragged = true;
+      if (!dragged) return;
+      // Only orbit while looking at the whole diorama, not during a close-up.
+      if (activeRef.current) return;
+      targetAzim = Math.max(-AZIM_CLAMP, Math.min(AZIM_CLAMP, baseAzim + dx * DRAG_AZIM_SPEED));
+      targetElev = Math.max(-ELEV_CLAMP, Math.min(ELEV_CLAMP, baseElev - dy * DRAG_ELEV_SPEED));
     };
-    const onTouchEnd = () => {
-      pointer.x = 0;
-      pointer.y = 0;
+    const onUp = (e: PointerEvent) => {
+      if (pointerDown && !dragged) onBackgroundTap();
+      pointerDown = false;
+      surface?.releasePointerCapture?.(e.pointerId);
     };
-    if (!reducedMotion) {
-      window.addEventListener('mousemove', onMouse, { passive: true });
-      window.addEventListener('touchmove', onTouch, { passive: true });
-      window.addEventListener('touchstart', onTouch, { passive: true });
-      window.addEventListener('touchend', onTouchEnd, { passive: true });
-    }
+    surface?.addEventListener('pointerdown', onDown);
+    surface?.addEventListener('pointermove', onMove);
+    surface?.addEventListener('pointerup', onUp);
+    surface?.addEventListener('pointercancel', onUp);
 
     let raf = 0;
-    let smooth = 0; // eased 0 (idle turntable) -> 1 (engaged close-up)
-    let orbitTime = 0; // advances only while idle, so the sweep freezes on tap
-    let lastX = NaN;
-    let lastY = NaN;
-    let lastZ = NaN;
-    let lastRotY = NaN;
-    let lastZoom = NaN;
+    let focus = 0; // eased 0 (overview) -> 1 (station close-up)
+    let swayT = 0;
+    let lastActiveAnchor = STATIONS[0].anchor;
+    let lastFocusZoom = STATIONS[0].focusZoom;
     let last = performance.now();
 
     const loop = (now: number) => {
@@ -244,136 +227,181 @@ export default function HeroSpline({
       last = now;
 
       const app = appRef.current;
+      const three = app?._camera;
       const cam = cameraRef.current;
       const home = homeRef.current;
-      if (!app || !cam || !home) return;
+      if (!app || !three || !cam || !home) return;
 
-      const engaged = engagedRef.current;
-      const target = engaged ? 1 : 0;
-      smooth += (target - smooth) * (reducedMotion ? 1 : Math.min(dt * 4, 1));
+      const activeId = activeRef.current;
+      const station = activeId ? STATIONS.find((s) => s.id === activeId) : null;
+      if (station) {
+        lastActiveAnchor = station.anchor;
+        lastFocusZoom = station.focusZoom;
+      }
 
-      // Advance the turntable only while idle. Freezing its phase during the
-      // close-up means disengaging resumes the sweep exactly where it paused,
-      // so there's no jump back into motion.
-      if (!engaged && !reducedMotion) orbitTime += dt;
-      const orbitAngle = reducedMotion
-        ? 0
-        : ORBIT_AMPLITUDE * Math.sin(orbitTime * ORBIT_OMEGA);
+      const focusTarget = station ? 1 : 0;
+      focus += (focusTarget - focus) * (reducedMotion ? 1 : Math.min(dt * 4, 1));
 
-      const fit = fitCamera(window.innerWidth, window.innerHeight);
+      // Ease drag toward the rest pose when the finger is up; add idle sway.
+      if (!pointerDown) {
+        targetAzim *= DRAG_RETURN;
+        targetElev *= DRAG_RETURN;
+      }
+      azim += (targetAzim - azim) * Math.min(dt * 8, 1);
+      elev += (targetElev - elev) * Math.min(dt * 8, 1);
+      swayT += dt;
+      const sway = reducedMotion ? 0 : IDLE_SWAY_AMP * Math.sin(swayT * IDLE_SWAY_OMEGA);
 
-      // Idle: orbit the centre axis (x = 0) at the authored radius, so the
-      // diorama stays perfectly centred while turning. Engaged: front-on
-      // (angle 0), pushed toward Jozi and zoomed in.
-      const orbitX = home.radius * Math.sin(orbitAngle);
-      const orbitZ = home.radius * Math.cos(orbitAngle);
+      const overview = 1 - focus;
+      const A = ISO_AZIM + (azim + sway) * overview;
+      const E = ISO_ELEV + elev * overview;
 
-      // Parallax only leaks in with the close-up, so the idle scene stays
-      // dead-centre as it rotates.
-      const parallaxX = reducedMotion ? 0 : pointer.x * 6 * smooth;
-      const parallaxY = reducedMotion ? 0 : pointer.y * -4 * smooth;
+      // Orbit pivot eases from the whole-scene centre to the active station.
+      const tx = lerp(ORBIT_PIVOT.x, lastActiveAnchor.x, focus);
+      const ty = lerp(ORBIT_PIVOT.y, lastActiveAnchor.y, focus);
+      const tz = lerp(ORBIT_PIVOT.z, lastActiveAnchor.z, focus);
 
-      const camX = lerp(orbitX, fit.engagedTargetX, smooth) + parallaxX;
-      const camY = lerp(fit.cameraY, fit.engagedCameraY, smooth) + parallaxY;
-      const camZ = lerp(orbitZ, home.radius, smooth);
-      const rotY = home.headingY + orbitAngle * (1 - smooth);
-      const zoom = lerp(fit.zoom, fit.engagedZoom, smooth);
+      const baseZoom = fitZoom(window.innerWidth, window.innerHeight);
+      const zoom = lerp(baseZoom, baseZoom * lastFocusZoom, focus);
 
-      // Only touch the camera when something meaningfully changed, so the
-      // runtime's temporal AA can converge to a crisp frame at rest.
-      // (NaN-safe: the first frame must always write.)
-      const settled =
-        Math.abs(camX - lastX) <= 1e-3 &&
-        Math.abs(camY - lastY) <= 1e-3 &&
-        Math.abs(camZ - lastZ) <= 1e-3 &&
-        Math.abs(rotY - lastRotY) <= 1e-4 &&
-        Math.abs(zoom - lastZoom) <= 1e-4;
-      if (settled) return;
-      lastX = camX;
-      lastY = camY;
-      lastZ = camZ;
-      lastRotY = rotY;
-      lastZoom = zoom;
+      const cosE = Math.cos(E);
+      const R = home.radius;
+      const camX = tx + R * Math.sin(A) * cosE;
+      const camY = ty + R * Math.sin(E);
+      const camZ = tz + R * Math.cos(A) * cosE;
 
+      three.position.set(camX, camY, camZ);
+      three.up.set(0, 1, 0);
+      three.lookAt(tx, ty, tz);
+      three.zoom = zoom;
+      three.updateProjectionMatrix();
+      three.updateMatrixWorld(true);
+
+      // Mirror onto the Spline camera node so the runtime's own render ticks
+      // (for Jozi/Bruno's idle animations) keep our isometric pose.
       cam.position.x = camX;
       cam.position.y = camY;
       cam.position.z = camZ;
-      cam.rotation.y = rotY;
+      cam.rotation.x = three.rotation.x;
+      cam.rotation.y = three.rotation.y;
+      cam.rotation.z = three.rotation.z;
 
-      const three = app._camera;
-      if (three) {
-        three.zoom = zoom;
-        three.updateProjectionMatrix();
-        three.updateMatrixWorld(true);
-        // Jozi's projected position only matters once the menu is coming up,
-        // so skip it (and the per-frame React state churn) during the idle
-        // turntable.
-        if (smooth > 0.01) {
-          const anchorY =
-            window.innerHeight > window.innerWidth
-              ? JOZI_ANCHOR_Y_PORTRAIT
-              : JOZI_ANCHOR_Y_LANDSCAPE;
-          onJoziScreen(
-            projectToScreen(
-              JOZI_X,
-              anchorY,
-              JOZI_ANCHOR_Z,
-              three,
-              window.innerWidth,
-              window.innerHeight,
-            ),
-          );
-        }
+      // Position hotspot markers imperatively; fade + disable them in close-up.
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const markerOpacity = Math.max(0, 1 - focus * 1.6);
+      for (let i = 0; i < STATIONS.length; i++) {
+        const el = markerRefs.current[i];
+        if (!el) continue;
+        const a = STATIONS[i].anchor;
+        const p = projectToScreen(a.x, a.y, a.z, three, w, h);
+        el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) translate(-50%, -50%)`;
+        el.style.opacity = `${markerOpacity}`;
+        el.style.pointerEvents = markerOpacity > 0.5 ? 'auto' : 'none';
       }
+
       app.requestRender?.();
     };
     raf = requestAnimationFrame(loop);
 
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener('mousemove', onMouse);
-      window.removeEventListener('touchmove', onTouch);
-      window.removeEventListener('touchstart', onTouch);
-      window.removeEventListener('touchend', onTouchEnd);
+      surface?.removeEventListener('pointerdown', onDown);
+      surface?.removeEventListener('pointermove', onMove);
+      surface?.removeEventListener('pointerup', onUp);
+      surface?.removeEventListener('pointercancel', onUp);
     };
-  }, [onJoziScreen]);
+  }, [onBackgroundTap]);
 
   if (!sceneUrl) return null;
 
   return (
-    <Spline
-      scene={sceneUrl}
-      onLoad={(app: Application) => {
-        const internal = app as InternalApp;
-        appRef.current = internal;
-        const camObj = app.findObjectByName('Camera') ?? null;
-        cameraRef.current = camObj;
+    <div ref={rootRef} className="absolute inset-0">
+      <div className="pointer-events-none absolute inset-0">
+        <Spline
+          scene={sceneUrl}
+          onLoad={(app: Application) => {
+            const internal = app as InternalApp;
+            appRef.current = internal;
+            const camObj = app.findObjectByName('Camera') ?? null;
+            cameraRef.current = camObj;
 
-        // Snapshot the authored camera as the turntable's rest pose: it sits
-        // on the +Z side looking at the scene's centre axis (x = 0), so its
-        // Z coordinate is the orbit radius and its Y heading is front-on.
-        if (camObj) {
-          homeRef.current = {
-            radius: camObj.position.z,
-            headingY: camObj.rotation.y,
-          };
-        }
+            // Distance from the authored camera to the orbit pivot — reused as
+            // the isometric orbit radius so the near/far clip range that the
+            // scene was published with still contains the whole diorama.
+            if (camObj) {
+              const dx = camObj.position.x - ORBIT_PIVOT.x;
+              const dy = camObj.position.y - ORBIT_PIVOT.y;
+              const dz = camObj.position.z - ORBIT_PIVOT.z;
+              homeRef.current = { radius: Math.hypot(dx, dy, dz) || FALLBACK_RADIUS };
+            } else {
+              homeRef.current = { radius: FALLBACK_RADIUS };
+            }
 
-        // The scene's Spline publish settings bake in a low mobile pixel
-        // ratio (a fixed low-res buffer stretched to fill the screen),
-        // which reads as pixelated on phones. Override it after load, then
-        // force a resize so the drawing buffer is actually reallocated at
-        // the new ratio (setPixelRatio alone doesn't reallocate it) — this
-        // sticks across future resizes/orientation changes since _resize()
-        // never re-touches pixel ratio itself.
-        internal._renderer?.setPixelRatio(
-          Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO),
-        );
-        internal._resize?.();
+            // Override Spline's baked low mobile pixel ratio (a fixed low-res
+            // buffer stretched to fill the screen — the "cheap"/pixelated
+            // look) with the real device ratio, then force a resize so the
+            // drawing buffer is actually reallocated crisp.
+            internal._renderer?.setPixelRatio(
+              Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO),
+            );
+            internal._resize?.();
 
-        onReady();
-      }}
-      style={{ width: '100%', height: '100%' }}
-    />
+            // Dev aid (gated by ?debug): dump scene object names + world
+            // positions so station anchors can be tuned against the real
+            // export, and expose the app for console poking.
+            if (
+              typeof window !== 'undefined' &&
+              new URLSearchParams(window.location.search).has('debug')
+            ) {
+              (window as unknown as { __spline?: unknown }).__spline = internal;
+              try {
+                const dump = app.getAllObjects().map((o) => ({
+                  name: o.name,
+                  x: Math.round(o.position.x),
+                  y: Math.round(o.position.y),
+                  z: Math.round(o.position.z),
+                }));
+                console.log('SPLINE_OBJECTS', JSON.stringify(dump));
+              } catch {
+                /* ignore */
+              }
+            }
+
+            onReady();
+          }}
+          style={{ width: '100%', height: '100%' }}
+        />
+      </div>
+
+      {/* drag-to-orbit surface (also taps-to-dismiss when zoomed in) */}
+      <div data-drag-surface className="absolute inset-0 z-10 touch-none" style={{ cursor: 'grab' }} />
+
+      {/* hotspot markers, positioned imperatively by the RAF loop */}
+      <div className="pointer-events-none absolute inset-0 z-30">
+        {STATIONS.map((s, i) => (
+          <button
+            key={s.id}
+            ref={(el) => {
+              markerRefs.current[i] = el;
+            }}
+            type="button"
+            aria-label={s.label}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectStation(s.id);
+            }}
+            className="hotspot absolute top-0 left-0"
+            style={{ opacity: 0 }}
+          >
+            <span className="hotspot-ring" aria-hidden="true" />
+            <span className="hotspot-dot" aria-hidden="true" />
+            <span className="hotspot-label">
+              <span aria-hidden="true">{s.emoji}</span> {s.label}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
