@@ -1,31 +1,20 @@
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, Nunito_Sans } from 'next/font/google';
 import './globals.css';
 
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  variable: '--font-fraunces',
-  axes: ['SOFT', 'WONK', 'opsz'],
-  display: 'swap',
-});
-
-const nunito = Nunito_Sans({
-  subsets: ['latin'],
-  variable: '--font-nunito',
-  display: 'swap',
-});
-
 export const metadata: Metadata = {
-  title: 'Jozi Bakes — Home Bakery in Kharghar, Navi Mumbai',
-  description:
-    'Small-batch cakes, cookies and bakes, made with love by Jozi (and supervised by Bruno). Home bakery in Kharghar, Navi Mumbai.',
+  title: 'Jozi Bakes',
+  description: 'Jozi Bakes',
 };
 
 export const viewport: Viewport = {
-  themeColor: '#fbf5e5',
+  themeColor: '#000000',
   viewportFit: 'cover',
   width: 'device-width',
+  height: 'device-height',
   initialScale: 1,
+  minimumScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -34,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${nunito.variable}`}>
+    <html lang="en">
       <head>
         <link rel="preconnect" href="https://prod.spline.design" crossOrigin="anonymous" />
         <link

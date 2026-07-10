@@ -1,9 +1,9 @@
-import Hero from './components/Hero';
+import SplineScene from './SplineScene';
 
 export default function Home() {
   return (
     <main>
-      <Hero />
+      <SplineScene />
     </main>
   );
 }
