@@ -4,10 +4,12 @@
  * relevant sheet.
  *
  * `anchor` is a world-space point in the Spline scene (same units as the
- * camera constants in HeroSpline). Jozi stands at world x = 0, so both
- * anchors sit on that safe centre line; tune y/z against screenshots if the
- * scene is re-exported. `focusZoom` multiplies the fitted overview zoom for
- * the close-up.
+ * camera constants in HeroSpline). Cross-checked against the live scene's
+ * object dump: Jozi's root sits at (0, 33, 212), Bruno at (34, 32, 216),
+ * Shop at (0, 16, 0) — both stations sit on Jozi's x/z line, offset up in y
+ * toward waist/head height. Re-derive via ?debug (SPLINE_OBJECTS console
+ * dump) + screenshots if the scene is re-exported. `focusZoom` multiplies
+ * the fitted overview zoom for the close-up.
  */
 
 export type StationKind = 'menu' | 'about';
@@ -27,7 +29,7 @@ export const STATIONS: Station[] = [
     label: 'Order the bakes',
     emoji: '🧁',
     kind: 'menu',
-    anchor: { x: 0, y: 60, z: 212 },
+    anchor: { x: 0, y: 70, z: 212 },
     focusZoom: 1.9,
   },
   {
@@ -35,7 +37,7 @@ export const STATIONS: Station[] = [
     label: 'Meet Jozi',
     emoji: '👩‍🍳',
     kind: 'about',
-    anchor: { x: 0, y: 150, z: 212 },
+    anchor: { x: 0, y: 120, z: 212 },
     focusZoom: 2.1,
   },
 ];

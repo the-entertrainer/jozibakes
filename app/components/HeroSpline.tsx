@@ -17,22 +17,22 @@ const SCENE_WIDTH = 706;
 const SCENE_HEIGHT = 565;
 
 /**
- * Isometric framing. The orthographic camera orbits a fixed pivot (ORBIT_*)
- * at the authored distance, tilted down (ELEV) and turned (AZIM) into a 3/4
- * diorama view. Everything is centred on x = 0 (Jozi's line) so the diorama
- * stays centred on screen. These are tuned against screenshots — adjust the
- * pivot depth / angles here if the view sits off-centre or too steep.
+ * Isometric framing. The camera orbits the vertical axis through the scene
+ * origin (x = 0, z = 0) at its authored XZ distance, turned by an azimuth
+ * offset into a 3/4 diorama view. Deliberately azimuth-only (Y-axis
+ * rotation): the authored camera's own pitch (rotation.x, baked in by the
+ * scene's designer) is never touched, since only ever driving position +
+ * a single rotation axis is the pattern already proven to render correctly
+ * with this runtime — recomputing full orientation via lookAt() and
+ * mirroring it back fought the runtime's own camera sync and rendered
+ * blank/off-frame. Re-tune ISO_AZIM_REST against screenshots if the scene
+ * is re-exported.
  */
-const ISO_AZIM = 0.72; // ~41° turn
-const ISO_ELEV = 0.5; // ~29° tilt down
-const ORBIT_PIVOT = { x: 0, y: 95, z: 150 };
-const ISO_ZOOM_FACTOR = 0.94;
+const ISO_AZIM_REST = 0.72; // ~41° turn
 
-/** How far drag can nudge the view before it eases back to the iso rest pose. */
+/** How far drag can swing the azimuth before it eases back to rest. */
 const AZIM_CLAMP = 0.38; // ~22°
-const ELEV_CLAMP = 0.16; // ~9°
 const DRAG_AZIM_SPEED = 0.0042;
-const DRAG_ELEV_SPEED = 0.0034;
 const DRAG_RETURN = 0.94; // per-frame decay of drag back toward the rest pose
 
 /** Slow breathing sway so the resting diorama still feels alive. */
@@ -40,30 +40,33 @@ const IDLE_SWAY_AMP = 0.04;
 const IDLE_SWAY_OMEGA = (2 * Math.PI) / 22;
 
 const DRAG_THRESHOLD_PX = 6;
-const FALLBACK_RADIUS = 1200;
+const FALLBACK_RADIUS_XZ = 1467;
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
-function fitZoom(width: number, height: number) {
+/**
+ * Overview zoom + camera height per orientation — the same tuned values the
+ * front-on version validated by screenshot, reused as-is since the
+ * authored pitch (and therefore what height "frames well") hasn't changed.
+ */
+function fitCamera(width: number, height: number) {
   const portrait = height > width;
   const short = !portrait && height < 540;
   const widthZoom = (width * (portrait ? 0.92 : 0.8)) / SCENE_WIDTH;
   const heightZoom = (height * (portrait ? 0.5 : short ? 0.5 : 0.6)) / SCENE_HEIGHT;
-  return Math.min(widthZoom, heightZoom) * ISO_ZOOM_FACTOR;
+  return {
+    zoom: Math.min(widthZoom, heightZoom),
+    cameraY: portrait ? 264 : short ? 226 : 301,
+  };
 }
 
 /** Renderer/camera internals the runtime keeps private but exposes at runtime. */
 type InternalRenderer = { setPixelRatio: (ratio: number) => void };
 type Matrix4Like = { elements: number[] };
-type Vec3 = { x: number; y: number; z: number; set: (x: number, y: number, z: number) => void };
 type InternalCamera = {
   zoom: number;
-  position: Vec3;
-  up: Vec3;
-  rotation: { x: number; y: number; z: number };
-  lookAt: (x: number, y: number, z: number) => void;
   updateProjectionMatrix: () => void;
   updateMatrixWorld: (force?: boolean) => void;
   matrixWorldInverse: Matrix4Like;
@@ -121,7 +124,7 @@ export default function HeroSpline({
   const [sceneUrl, setSceneUrl] = useState<string | null>(null);
   const appRef = useRef<InternalApp | null>(null);
   const cameraRef = useRef<SPEObject | null>(null);
-  const homeRef = useRef<{ radius: number } | null>(null);
+  const homeRef = useRef<{ radiusXZ: number; headingY: number } | null>(null);
   const markerRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -163,11 +166,10 @@ export default function HeroSpline({
     };
   }, [onProgress]);
 
-  // Camera driver + hotspot projection. Drives the orthographic camera into an
-  // isometric pose via lookAt (mirrored onto the Spline camera node so the
-  // runtime's own render ticks keep the pose), eases to a station close-up on
-  // selection, and imperatively positions the hotspot markers each frame so
-  // there is no per-frame React state churn.
+  // Camera driver + hotspot projection: orbits the diorama azimuth-only
+  // (position + cam.rotation.y — see ISO_AZIM_REST above for why), eases to
+  // a station close-up on selection, and imperatively positions the hotspot
+  // markers each frame so there is no per-frame React state churn.
   useEffect(() => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -175,34 +177,26 @@ export default function HeroSpline({
     let pointerDown = false;
     let dragged = false;
     let startX = 0;
-    let startY = 0;
     let baseAzim = 0;
-    let baseElev = 0;
     let targetAzim = 0;
-    let targetElev = 0;
     let azim = 0;
-    let elev = 0;
 
     const surface = rootRef.current?.querySelector<HTMLElement>('[data-drag-surface]');
     const onDown = (e: PointerEvent) => {
       pointerDown = true;
       dragged = false;
       startX = e.clientX;
-      startY = e.clientY;
       baseAzim = targetAzim;
-      baseElev = targetElev;
       surface?.setPointerCapture(e.pointerId);
     };
     const onMove = (e: PointerEvent) => {
       if (!pointerDown || reducedMotion) return;
       const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      if (!dragged && Math.hypot(dx, dy) > DRAG_THRESHOLD_PX) dragged = true;
+      if (!dragged && Math.abs(dx) > DRAG_THRESHOLD_PX) dragged = true;
       if (!dragged) return;
       // Only orbit while looking at the whole diorama, not during a close-up.
       if (activeRef.current) return;
       targetAzim = Math.max(-AZIM_CLAMP, Math.min(AZIM_CLAMP, baseAzim + dx * DRAG_AZIM_SPEED));
-      targetElev = Math.max(-ELEV_CLAMP, Math.min(ELEV_CLAMP, baseElev - dy * DRAG_ELEV_SPEED));
     };
     const onUp = (e: PointerEvent) => {
       if (pointerDown && !dragged) onBackgroundTap();
@@ -243,48 +237,37 @@ export default function HeroSpline({
       focus += (focusTarget - focus) * (reducedMotion ? 1 : Math.min(dt * 4, 1));
 
       // Ease drag toward the rest pose when the finger is up; add idle sway.
-      if (!pointerDown) {
-        targetAzim *= DRAG_RETURN;
-        targetElev *= DRAG_RETURN;
-      }
+      if (!pointerDown) targetAzim *= DRAG_RETURN;
       azim += (targetAzim - azim) * Math.min(dt * 8, 1);
-      elev += (targetElev - elev) * Math.min(dt * 8, 1);
       swayT += dt;
       const sway = reducedMotion ? 0 : IDLE_SWAY_AMP * Math.sin(swayT * IDLE_SWAY_OMEGA);
 
+      // Azimuth eases back to front-on (0) while focusing on a station, so
+      // the close-up presents it straight-on rather than at the iso angle.
       const overview = 1 - focus;
-      const A = ISO_AZIM + (azim + sway) * overview;
-      const E = ISO_ELEV + elev * overview;
+      const A = home.headingY + (ISO_AZIM_REST + azim + sway) * overview;
 
-      // Orbit pivot eases from the whole-scene centre to the active station.
-      const tx = lerp(ORBIT_PIVOT.x, lastActiveAnchor.x, focus);
-      const ty = lerp(ORBIT_PIVOT.y, lastActiveAnchor.y, focus);
-      const tz = lerp(ORBIT_PIVOT.z, lastActiveAnchor.z, focus);
+      const fit = fitCamera(window.innerWidth, window.innerHeight);
+      const zoom = lerp(fit.zoom, fit.zoom * lastFocusZoom, focus);
+      // Camera height eases from the overview height down toward the active
+      // station's anchor (a little above it, roughly head height) on focus.
+      const camY = lerp(fit.cameraY, lastActiveAnchor.y + 40, focus);
 
-      const baseZoom = fitZoom(window.innerWidth, window.innerHeight);
-      const zoom = lerp(baseZoom, baseZoom * lastFocusZoom, focus);
+      // Orbit the vertical axis through the scene origin at the authored XZ
+      // radius (azimuth-only — pitch stays whatever the scene authored on
+      // `cam.rotation.x`, never touched here), nudged toward the active
+      // station's X on focus so the close-up centres on it.
+      const camX = home.radiusXZ * Math.sin(A) + lerp(0, lastActiveAnchor.x, focus);
+      const camZ = home.radiusXZ * Math.cos(A);
 
-      const cosE = Math.cos(E);
-      const R = home.radius;
-      const camX = tx + R * Math.sin(A) * cosE;
-      const camY = ty + R * Math.sin(E);
-      const camZ = tz + R * Math.cos(A) * cosE;
-
-      three.position.set(camX, camY, camZ);
-      three.up.set(0, 1, 0);
-      three.lookAt(tx, ty, tz);
-      three.zoom = zoom;
-      three.updateProjectionMatrix();
-      three.updateMatrixWorld(true);
-
-      // Mirror onto the Spline camera node so the runtime's own render ticks
-      // (for Jozi/Bruno's idle animations) keep our isometric pose.
       cam.position.x = camX;
       cam.position.y = camY;
       cam.position.z = camZ;
-      cam.rotation.x = three.rotation.x;
-      cam.rotation.y = three.rotation.y;
-      cam.rotation.z = three.rotation.z;
+      cam.rotation.y = A;
+
+      three.zoom = zoom;
+      three.updateProjectionMatrix();
+      three.updateMatrixWorld(true);
 
       // Position hotspot markers imperatively; fade + disable them in close-up.
       const w = window.innerWidth;
@@ -326,16 +309,18 @@ export default function HeroSpline({
             const camObj = app.findObjectByName('Camera') ?? null;
             cameraRef.current = camObj;
 
-            // Distance from the authored camera to the orbit pivot — reused as
-            // the isometric orbit radius so the near/far clip range that the
-            // scene was published with still contains the whole diorama.
+            // Authored camera's XZ distance from the scene origin (the orbit
+            // radius) and its starting yaw — orbiting around that origin at
+            // this exact radius reproduces the authored, known-good framing
+            // at azimuth 0, so any rotation away from it is a pure Y-turn of
+            // a already-correct pose rather than a freshly computed one.
             if (camObj) {
-              const dx = camObj.position.x - ORBIT_PIVOT.x;
-              const dy = camObj.position.y - ORBIT_PIVOT.y;
-              const dz = camObj.position.z - ORBIT_PIVOT.z;
-              homeRef.current = { radius: Math.hypot(dx, dy, dz) || FALLBACK_RADIUS };
+              homeRef.current = {
+                radiusXZ: Math.hypot(camObj.position.x, camObj.position.z) || FALLBACK_RADIUS_XZ,
+                headingY: camObj.rotation.y,
+              };
             } else {
-              homeRef.current = { radius: FALLBACK_RADIUS };
+              homeRef.current = { radiusXZ: FALLBACK_RADIUS_XZ, headingY: 0 };
             }
 
             // Override Spline's baked low mobile pixel ratio (a fixed low-res
