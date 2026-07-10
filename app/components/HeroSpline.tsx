@@ -58,6 +58,22 @@ const FULL_CLOSE_ZOOM_LANDSCAPE = 3.5;
 const ENGAGED_TARGET_X_LANDSCAPE = lerp(0, FULL_CLOSE_TARGET_X_LANDSCAPE, ENGAGE_T);
 const ENGAGED_CAMERA_Y_LANDSCAPE = lerp(301, FULL_CLOSE_CAMERA_Y_LANDSCAPE, ENGAGE_T);
 
+/**
+ * Idle "turntable": until someone taps, the camera sweeps slowly around the
+ * diorama's vertical centre axis so the scene feels alive and self-rotating,
+ * while always staying centred. It's a gentle left↔right pendulum rather than
+ * a full 360° spin, because the diorama's back isn't modelled to be shown —
+ * the sweep keeps the authored front in view the whole time.
+ *
+ * The sweep passes through azimuth 0 (the authored front-on framing), which
+ * is exactly the orientation the tap close-up returns to, so engaging and
+ * disengaging blend seamlessly with no snap. ORBIT_AMPLITUDE is the peak
+ * azimuth in radians (~19°); ORBIT_OMEGA is the pace (2π / period, ~18 s).
+ * Raise ORBIT_AMPLITUDE toward Math.PI for a wider showcase turn.
+ */
+const ORBIT_AMPLITUDE = 0.34;
+const ORBIT_OMEGA = (2 * Math.PI) / 18;
+
 /** Renderer/pixel-ratio/projection internals the runtime keeps private but exposes at runtime. */
 type InternalRenderer = { setPixelRatio: (ratio: number) => void };
 type Matrix4Like = { elements: number[] };
@@ -136,6 +152,9 @@ export default function HeroSpline({
   const [sceneUrl, setSceneUrl] = useState<string | null>(null);
   const appRef = useRef<InternalApp | null>(null);
   const cameraRef = useRef<SPEObject | null>(null);
+  // Authored camera pose captured on load — the orbit radius (distance to the
+  // scene's centre axis) and the front-on heading it sweeps around.
+  const homeRef = useRef<{ radius: number; headingY: number } | null>(null);
   const engagedRef = useRef(engaged);
   engagedRef.current = engaged;
 
@@ -177,10 +196,11 @@ export default function HeroSpline({
     };
   }, [onProgress]);
 
-  // Camera driver: eases toward a subtle "engaged" framing on tap (no
-  // rotation/orbit — same front-on angle throughout), plus a gentle
-  // pointer/touch parallax offset. Reports Jozi's projected screen position
-  // each time the camera actually changes, so the RPG menu can track her.
+  // Camera driver. Idle: a slow turntable sweep around the diorama's centre
+  // axis (always centred, always front-facing). On tap: eases to a centred
+  // close-up of Jozi at the authored front-on heading, and a subtle
+  // pointer/touch parallax fades in. Reports Jozi's projected screen position
+  // while engaged so the RPG menu can anchor to her.
   useEffect(() => {
     const reducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
@@ -209,9 +229,12 @@ export default function HeroSpline({
     }
 
     let raf = 0;
-    let smooth = 0; // eased 0 (wide) -> 1 (engaged)
+    let smooth = 0; // eased 0 (idle turntable) -> 1 (engaged close-up)
+    let orbitTime = 0; // advances only while idle, so the sweep freezes on tap
     let lastX = NaN;
     let lastY = NaN;
+    let lastZ = NaN;
+    let lastRotY = NaN;
     let lastZoom = NaN;
     let last = performance.now();
 
@@ -222,17 +245,38 @@ export default function HeroSpline({
 
       const app = appRef.current;
       const cam = cameraRef.current;
-      if (!app || !cam) return;
+      const home = homeRef.current;
+      if (!app || !cam || !home) return;
 
-      const target = engagedRef.current ? 1 : 0;
+      const engaged = engagedRef.current;
+      const target = engaged ? 1 : 0;
       smooth += (target - smooth) * (reducedMotion ? 1 : Math.min(dt * 4, 1));
 
-      const fit = fitCamera(window.innerWidth, window.innerHeight);
-      const parallaxX = reducedMotion ? 0 : pointer.x * 8;
-      const parallaxY = reducedMotion ? 0 : pointer.y * -5;
+      // Advance the turntable only while idle. Freezing its phase during the
+      // close-up means disengaging resumes the sweep exactly where it paused,
+      // so there's no jump back into motion.
+      if (!engaged && !reducedMotion) orbitTime += dt;
+      const orbitAngle = reducedMotion
+        ? 0
+        : ORBIT_AMPLITUDE * Math.sin(orbitTime * ORBIT_OMEGA);
 
-      const camX = lerp(JOZI_X, fit.engagedTargetX, smooth) + parallaxX;
+      const fit = fitCamera(window.innerWidth, window.innerHeight);
+
+      // Idle: orbit the centre axis (x = 0) at the authored radius, so the
+      // diorama stays perfectly centred while turning. Engaged: front-on
+      // (angle 0), pushed toward Jozi and zoomed in.
+      const orbitX = home.radius * Math.sin(orbitAngle);
+      const orbitZ = home.radius * Math.cos(orbitAngle);
+
+      // Parallax only leaks in with the close-up, so the idle scene stays
+      // dead-centre as it rotates.
+      const parallaxX = reducedMotion ? 0 : pointer.x * 6 * smooth;
+      const parallaxY = reducedMotion ? 0 : pointer.y * -4 * smooth;
+
+      const camX = lerp(orbitX, fit.engagedTargetX, smooth) + parallaxX;
       const camY = lerp(fit.cameraY, fit.engagedCameraY, smooth) + parallaxY;
+      const camZ = lerp(orbitZ, home.radius, smooth);
+      const rotY = home.headingY + orbitAngle * (1 - smooth);
       const zoom = lerp(fit.zoom, fit.engagedZoom, smooth);
 
       // Only touch the camera when something meaningfully changed, so the
@@ -241,34 +285,45 @@ export default function HeroSpline({
       const settled =
         Math.abs(camX - lastX) <= 1e-3 &&
         Math.abs(camY - lastY) <= 1e-3 &&
+        Math.abs(camZ - lastZ) <= 1e-3 &&
+        Math.abs(rotY - lastRotY) <= 1e-4 &&
         Math.abs(zoom - lastZoom) <= 1e-4;
       if (settled) return;
       lastX = camX;
       lastY = camY;
+      lastZ = camZ;
+      lastRotY = rotY;
       lastZoom = zoom;
 
       cam.position.x = camX;
       cam.position.y = camY;
+      cam.position.z = camZ;
+      cam.rotation.y = rotY;
 
       const three = app._camera;
       if (three) {
         three.zoom = zoom;
         three.updateProjectionMatrix();
         three.updateMatrixWorld(true);
-        const anchorY =
-          window.innerHeight > window.innerWidth
-            ? JOZI_ANCHOR_Y_PORTRAIT
-            : JOZI_ANCHOR_Y_LANDSCAPE;
-        onJoziScreen(
-          projectToScreen(
-            JOZI_X,
-            anchorY,
-            JOZI_ANCHOR_Z,
-            three,
-            window.innerWidth,
-            window.innerHeight,
-          ),
-        );
+        // Jozi's projected position only matters once the menu is coming up,
+        // so skip it (and the per-frame React state churn) during the idle
+        // turntable.
+        if (smooth > 0.01) {
+          const anchorY =
+            window.innerHeight > window.innerWidth
+              ? JOZI_ANCHOR_Y_PORTRAIT
+              : JOZI_ANCHOR_Y_LANDSCAPE;
+          onJoziScreen(
+            projectToScreen(
+              JOZI_X,
+              anchorY,
+              JOZI_ANCHOR_Z,
+              three,
+              window.innerWidth,
+              window.innerHeight,
+            ),
+          );
+        }
       }
       app.requestRender?.();
     };
@@ -291,7 +346,18 @@ export default function HeroSpline({
       onLoad={(app: Application) => {
         const internal = app as InternalApp;
         appRef.current = internal;
-        cameraRef.current = app.findObjectByName('Camera') ?? null;
+        const camObj = app.findObjectByName('Camera') ?? null;
+        cameraRef.current = camObj;
+
+        // Snapshot the authored camera as the turntable's rest pose: it sits
+        // on the +Z side looking at the scene's centre axis (x = 0), so its
+        // Z coordinate is the orbit radius and its Y heading is front-on.
+        if (camObj) {
+          homeRef.current = {
+            radius: camObj.position.z,
+            headingY: camObj.rotation.y,
+          };
+        }
 
         // The scene's Spline publish settings bake in a low mobile pixel
         // ratio (a fixed low-res buffer stretched to fill the screen),
