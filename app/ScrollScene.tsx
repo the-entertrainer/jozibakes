@@ -19,32 +19,28 @@ import { useEffect, useRef, useState } from 'react';
  */
 type Drive = (p: number) => Record<string, number>;
 
+// Rounded, volumetric models (donut, loaf basket, cake slice) do a full turn
+// with a big, dynamic tilt swing. The tilt leans harder on the way in than on
+// the way out (the asymmetric sin(2πp) term) so the pose feels alive while the
+// model stays anchored in place — the motion is mostly rotation, not drift.
+const fullSpin: Drive = (p) => ({
+  spinY: 18 + p * 400,
+  tilt: 16 + 22 * Math.sin(p * Math.PI) + 6 * Math.sin(p * Math.PI * 2),
+  bob: 22 * Math.sin(p * Math.PI),
+});
+
 const DRIVES: Record<string, Drive> = {
-  // Sweet Treats — pink sprinkle donut.
-  // Baseline tilt keeps a stylish 3/4 pose at every scroll position;
-  // spin and float layer motion on top.
-  treats: (p) => ({
-    spinY: 24 + p * 360,
-    tilt: 22 + 8 * Math.sin(p * Math.PI),
-    bob: 20 * Math.sin(p * Math.PI),
-  }),
-  // Breads — basket of loaves; same variables, tilted to show the loaves.
-  breads: (p) => ({
-    spinY: 24 + p * 360,
-    tilt: 22 + 8 * Math.sin(p * Math.PI),
-    bob: 20 * Math.sin(p * Math.PI),
-  }),
-  // Cookies — a flat disc, so it rocks gently instead of spinning fully
-  // (a 360 turn would show its thin edge and look bad).
+  // Sweet Treats — pink sprinkle donut
+  treats: fullSpin,
+  // Breads — basket of loaves
+  breads: fullSpin,
+  // Loaf Cakes — strawberry-topped cake slice
+  loaf: fullSpin,
+  // Cookies — a flat disc, so it rocks and tilts face-on instead of spinning
+  // fully (a 360 turn would show its thin edge). Bigger rock + tilt for punch.
   cookies: (p) => ({
-    spinY: 24 + 20 * Math.sin(p * Math.PI * 2),
-    tilt: 20 + 12 * Math.sin(p * Math.PI),
-    bob: 18 * Math.sin(p * Math.PI),
-  }),
-  // Loaf Cakes — strawberry-topped cake slice.
-  loaf: (p) => ({
-    spinY: 24 + p * 360,
-    tilt: 22 + 8 * Math.sin(p * Math.PI),
+    spinY: 24 + 34 * Math.sin(p * Math.PI * 2),
+    tilt: 12 + 26 * Math.sin(p * Math.PI),
     bob: 20 * Math.sin(p * Math.PI),
   }),
 };
