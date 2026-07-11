@@ -1,4 +1,5 @@
 import ScrollScene from './ScrollScene';
+import PhotoCarousel from './PhotoCarousel';
 
 const SWEET_TREATS_SCENE =
   'https://prod.spline.design/XLyPwbheYwHrlx28/scene.splinecode';
@@ -96,39 +97,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Showreel */}
-      <section className="showreel">
-        <div className="wrap">
-          <div className="showreel__frame">
-            <img src="/images/rolls.png" alt="Freshly baked golden dinner rolls" />
-            <span className="showreel__label">Showreel</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Gallery */}
-      <section className="gallery">
-        <div className="wrap">
-          <h2 className="gallery__head">Gallery</h2>
-          <div className="gallery__grid">
-            <div className="gallery__item--tall">
-              <img src="/images/gallery-babka.jpg" alt="Caramel babka loaf" />
-            </div>
-            <div className="gallery__item--a">
-              <img
-                src="/images/gallery-cookie.jpg"
-                alt="Chocolate-drizzled cookies"
-              />
-            </div>
-            <div className="gallery__item--b">
-              <img
-                src="/images/gallery-bread.jpg"
-                alt="Sliced artisan ciabatta bread"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Showreel + Gallery — one continuous horizontal photo ribbon */}
+      <PhotoCarousel />
 
       {/* Sweet Treats */}
       <section className="product product--treats">

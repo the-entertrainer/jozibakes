@@ -220,80 +220,85 @@ section {
 }
 
 /* ============================================================
-   Showreel — full-width photo band with red title box
+   Showreel + Gallery — one continuous horizontal photo ribbon
    ============================================================ */
-.showreel {
+.reel {
   background: var(--red);
-  padding-block: clamp(1.75rem, 4vw, 3rem);
-}
-.showreel__frame {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 8;
-  max-height: 70vh;
+  padding-block: clamp(2rem, 5vw, 4rem);
   overflow: hidden;
 }
-.showreel__frame img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.reel__track {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 1.4vw, 1.25rem);
+  width: max-content;
+  will-change: transform;
 }
-.showreel__label {
+.reel__item {
+  flex: 0 0 auto;
+  height: clamp(230px, 42vh, 460px);
+}
+.reel__item img {
+  height: 100%;
+  width: auto;
+  display: block;
+  object-fit: cover;
+  border-radius: 14px;
+}
+/* Animated "Showreel" speech bubble */
+.reel__bubble {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 clamp(1.75rem, 4vw, 3.5rem);
+  background: var(--cream);
+  color: var(--red-deep);
+  border-radius: 20px;
+  position: relative;
+  animation: reelBob 2.6s ease-in-out infinite;
+}
+.reel__bubble::after {
+  /* speech-bubble tail */
+  content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--red);
-  color: var(--cream);
+  left: clamp(1.75rem, 4vw, 3.5rem);
+  bottom: -13px;
+  border-width: 14px 14px 0 0;
+  border-style: solid;
+  border-color: var(--cream) transparent transparent transparent;
+}
+.reel__bubbleText {
   font-weight: 800;
   letter-spacing: -0.02em;
-  font-size: clamp(2.4rem, 7vw, 5.5rem);
   line-height: 1;
-  padding: 0.15em 0.5em;
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  white-space: nowrap;
 }
-
-/* ============================================================
-   Gallery
-   ============================================================ */
-.gallery {
-  background: var(--paper);
-  padding-block: clamp(3rem, 8vw, 6rem);
+.reel__caret {
+  margin-left: 0.06em;
+  animation: reelBlink 1s steps(1) infinite;
 }
-.gallery__head {
-  color: var(--red-deep);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 0.9;
-  font-size: clamp(3rem, 9vw, 7rem);
+@keyframes reelBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
 }
-.gallery__grid {
-  margin-top: clamp(2rem, 4vw, 3rem);
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: auto auto;
-  gap: clamp(1rem, 2.5vw, 1.75rem);
+@keyframes reelBlink {
+  50% {
+    opacity: 0;
+  }
 }
-.gallery__grid img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-/* asymmetric layout: tall image top-right, two below */
-.gallery__item--tall {
-  grid-column: 2;
-  grid-row: 1;
-  aspect-ratio: 3 / 4;
-}
-.gallery__item--a {
-  grid-column: 1;
-  grid-row: 2;
-  aspect-ratio: 4 / 3;
-  align-self: end;
-}
-.gallery__item--b {
-  grid-column: 2;
-  grid-row: 2;
-  aspect-ratio: 4 / 3;
+@media (prefers-reduced-motion: reduce) {
+  .reel__bubble {
+    animation: none;
+  }
+  .reel__caret {
+    animation: none;
+  }
 }
 
 /* ============================================================
@@ -522,20 +527,8 @@ section {
   .about__block {
     max-width: 340px;
   }
-  .gallery__grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: none;
-  }
-  .gallery__item--tall,
-  .gallery__item--a,
-  .gallery__item--b {
-    grid-column: 1;
-    grid-row: auto;
-    aspect-ratio: 4 / 3;
-    align-self: auto;
-  }
-  .gallery__item--tall {
-    aspect-ratio: 3 / 4;
+  .reel__item {
+    height: clamp(180px, 34vh, 300px);
   }
   .product--treats .product__inner,
   .product--cookies .product__inner,
