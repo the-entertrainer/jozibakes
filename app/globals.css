@@ -352,61 +352,67 @@ section {
   height: 100% !important;
 }
 
-/* Sweet Treats — red bg, art overlaps from the left */
-.product--treats {
+/* Sweet Treats / Cookies — red bg, art overlaps from the left */
+.product--treats,
+.product--cookies {
   background: var(--red);
   color: var(--cream);
 }
-.product--treats .product__inner {
+.product--treats .product__inner,
+.product--cookies .product__inner {
   grid-template-columns: 0.95fr 1.05fr;
 }
-.product--treats .product__art {
+.product--treats .product__art,
+.product--cookies .product__art {
   grid-column: 1;
   grid-row: 1;
   margin-left: clamp(-4rem, -6vw, -2rem);
   transform: translateY(6%);
   position: relative;
-  z-index: 2; /* let the donut spill over the heading */
+  z-index: 2; /* let the model spill over the heading */
 }
-.product--treats .product__text {
-  position: relative;
-  z-index: 1;
-}
-.product--treats .product__text {
+.product--treats .product__text,
+.product--cookies .product__text {
   grid-column: 2;
   grid-row: 1;
   text-align: right;
   justify-self: end;
+  position: relative;
+  z-index: 1;
 }
-.product--treats .product__copy {
+.product--treats .product__copy,
+.product--cookies .product__copy {
   margin-left: auto;
 }
 
-/* Breads — cream bg, art on the right */
-.product--breads {
+/* Breads / Loaf Cakes — cream bg, art on the right */
+.product--breads,
+.product--loaf {
   background: var(--paper);
   color: var(--ink);
 }
-.product--breads .product__head {
+.product--breads .product__head,
+.product--loaf .product__head {
   color: var(--red-deep);
   text-align: right;
 }
-.product--breads .product__inner {
+.product--breads .product__inner,
+.product--loaf .product__inner {
   grid-template-columns: 1.05fr 0.95fr;
 }
-.product--breads .product__text {
+.product--breads .product__text,
+.product--loaf .product__text {
   grid-column: 1;
   grid-row: 1;
+  position: relative;
+  z-index: 1;
 }
-.product--breads .product__art {
+.product--breads .product__art,
+.product--loaf .product__art {
   grid-column: 2;
   grid-row: 1;
   position: relative;
-  z-index: 2; /* let the loaves spill over the heading */
-}
-.product--breads .product__text {
-  position: relative;
-  z-index: 1;
+  z-index: 2; /* let the model spill over the heading */
 }
 
 /* ============================================================
@@ -532,44 +538,45 @@ section {
     aspect-ratio: 3 / 4;
   }
   .product--treats .product__inner,
-  .product--breads .product__inner {
+  .product--cookies .product__inner,
+  .product--breads .product__inner,
+  .product--loaf .product__inner {
     grid-template-columns: 1fr;
-  }
-  .product--treats .product__art,
-  .product--breads .product__art {
-    grid-row: 1;
-    grid-column: 1;
-    margin-left: 0;
-    transform: none;
-    max-width: 78%;
   }
   /* Product 3D scenes: enlarge the model, give the stage an explicit height
      (an aspect-ratio box with an absolutely-positioned canvas collapses to
      0 on mobile) and pull the heading up underneath so it overlaps. */
   .product--treats .product__art,
-  .product--breads .product__art {
+  .product--cookies .product__art,
+  .product--breads .product__art,
+  .product--loaf .product__art {
+    grid-row: 1;
+    grid-column: 1;
+    margin-left: 0;
+    transform: none;
     max-width: 100%;
     margin-bottom: clamp(-10rem, -30vw, -5rem);
     z-index: 2;
   }
   .product--treats .product__art .scene-stage,
-  .product--breads .product__art .scene-stage {
+  .product--cookies .product__art .scene-stage,
+  .product--breads .product__art .scene-stage,
+  .product--loaf .product__art .scene-stage {
     width: 100%;
     height: 80vw;
     aspect-ratio: auto;
   }
   .product--treats .product__text,
-  .product--breads .product__text {
+  .product--cookies .product__text,
+  .product--breads .product__text,
+  .product--loaf .product__text {
     grid-row: 2;
     grid-column: 1;
     text-align: left;
     justify-self: start;
   }
-  .product--treats .product__text {
-    text-align: left;
-  }
   .product--breads .product__head,
-  .product--treats .product__text {
+  .product--loaf .product__head {
     text-align: left;
   }
   .product__copy {

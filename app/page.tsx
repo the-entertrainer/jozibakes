@@ -4,6 +4,10 @@ const SWEET_TREATS_SCENE =
   'https://prod.spline.design/XLyPwbheYwHrlx28/scene.splinecode';
 const BREADS_SCENE =
   'https://prod.spline.design/jcgH6ZbEJxJ40hGn/scene.splinecode';
+const COOKIES_SCENE =
+  'https://prod.spline.design/ltNfQI5ZTwL2Hsh9/scene.splinecode';
+const LOAF_CAKES_SCENE =
+  'https://prod.spline.design/Qu9P3tpZXhPQy7BF/scene.splinecode';
 
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel lacus et est varius malesuada. Nullam tincidunt, libero at suscipit lacinia, justo odio convallis turpis, id tempus mauris lorem nec velit. Integer sit amet justo at nisl convallis consequat a a augue. Phasellus convallis, arcu nec cursus ultrices, turpis felis lacinia arcu, non posuere est urna quis purus. Donec vel magna ut dui facilisis vehicula. Curabitur euismod, ex nec facilisis facilisis, velit quam tincidunt est, eu tincidunt velit libero a nulla. Nam ac lacus sit amet libero facilisis dapibus a id tortor.';
@@ -166,6 +170,52 @@ export default function Home() {
               sizePct={330}
               offsetXPct={-44}
               offsetYPct={-22}
+              mobileOffsetYPct={12}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Cookies */}
+      <section className="product product--cookies">
+        <div className="wrap product__inner">
+          <div className="product__art">
+            <ScrollScene
+              scene={COOKIES_SCENE}
+              preset="cookies"
+              sizePct={300}
+              offsetXPct={40}
+              offsetYPct={-12}
+              mobileOffsetYPct={14}
+            />
+          </div>
+          <div className="product__text">
+            <h2 className="product__head">Cookies</h2>
+            <p className="product__copy">{LOREM}</p>
+            <a className="btn btn--light product__cta" href="#contact">
+              Order Now
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Loaf Cakes */}
+      <section className="product product--loaf">
+        <div className="wrap product__inner">
+          <div className="product__text">
+            <h2 className="product__head">Loaf Cakes</h2>
+            <p className="product__copy">{LOREM}</p>
+            <a className="btn btn--red product__cta" href="#contact">
+              Order Now
+            </a>
+          </div>
+          <div className="product__art">
+            <ScrollScene
+              scene={LOAF_CAKES_SCENE}
+              preset="loaf"
+              sizePct={240}
+              offsetXPct={-22}
+              offsetYPct={-10}
               mobileOffsetYPct={12}
             />
           </div>

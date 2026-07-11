@@ -34,6 +34,19 @@ const DRIVES: Record<string, Drive> = {
     tilt: 22 + 8 * Math.sin(p * Math.PI),
     bob: 20 * Math.sin(p * Math.PI),
   }),
+  // Cookies — a flat disc, so it rocks gently instead of spinning fully
+  // (a 360 turn would show its thin edge and look bad).
+  cookies: (p) => ({
+    spinY: 24 + 20 * Math.sin(p * Math.PI * 2),
+    tilt: 20 + 12 * Math.sin(p * Math.PI),
+    bob: 18 * Math.sin(p * Math.PI),
+  }),
+  // Loaf Cakes — strawberry-topped cake slice.
+  loaf: (p) => ({
+    spinY: 24 + p * 360,
+    tilt: 22 + 8 * Math.sin(p * Math.PI),
+    bob: 20 * Math.sin(p * Math.PI),
+  }),
 };
 
 export default function ScrollScene({
