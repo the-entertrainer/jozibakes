@@ -19,15 +19,25 @@ import { useEffect, useRef, useState } from 'react';
  */
 type Drive = (p: number) => Record<string, number>;
 
-// Rounded, volumetric models (donut, loaf basket, cake slice) do a full turn
-// with a big, dynamic tilt swing. The tilt leans harder on the way in than on
-// the way out (the asymmetric sin(2πp) term) so the pose feels alive while the
-// model stays anchored in place — the motion is mostly rotation, not drift.
-const fullSpin: Drive = (p) => ({
-  spinY: 18 + p * 400,
-  tilt: 16 + 22 * Math.sin(p * Math.PI) + 6 * Math.sin(p * Math.PI * 2),
-  bob: 22 * Math.sin(p * Math.PI),
-});
+function smoothstep(a: number, b: number, x: number) {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
+// Poses are built from where the section sits in the viewport:
+//   c = 1 at centre, 0 at the edges  → how "settled" the model is
+//   s = -1 entering (bottom) → +1 leaving (top)  → travel direction
+// So the model turns *through* its hero angle and tips up to reveal its top
+// as it settles at centre, then reverses out — a scroll-scrubbed entrance/exit.
+const fullSpin: Drive = (p) => {
+  const c = 1 - Math.min(1, Math.abs(p - 0.5) * 2);
+  const s = (p - 0.5) * 2;
+  return {
+    spinY: 20 + s * 150,
+    tilt: 10 + 26 * c,
+    bob: 26 * c,
+  };
+};
 
 const DRIVES: Record<string, Drive> = {
   // Sweet Treats — pink sprinkle donut
@@ -36,13 +46,17 @@ const DRIVES: Record<string, Drive> = {
   breads: fullSpin,
   // Loaf Cakes — strawberry-topped cake slice
   loaf: fullSpin,
-  // Cookies — a flat disc, so it rocks and tilts face-on instead of spinning
-  // fully (a 360 turn would show its thin edge). Bigger rock + tilt for punch.
-  cookies: (p) => ({
-    spinY: 24 + 34 * Math.sin(p * Math.PI * 2),
-    tilt: 12 + 26 * Math.sin(p * Math.PI),
-    bob: 20 * Math.sin(p * Math.PI),
-  }),
+  // Cookies — a flat disc, so it only turns gently (a full spin would show its
+  // thin edge) but tips strongly face-on to reveal the chips at centre.
+  cookies: (p) => {
+    const c = 1 - Math.min(1, Math.abs(p - 0.5) * 2);
+    const s = (p - 0.5) * 2;
+    return {
+      spinY: 24 + s * 30,
+      tilt: 8 + 30 * c,
+      bob: 22 * c,
+    };
+  },
 };
 
 export default function ScrollScene({
@@ -117,8 +131,15 @@ export default function ScrollScene({
         const ox = isMobile ? 0 : (offsetXPct / 100) * r.width;
         const oyPct = isMobile ? mobileOffsetYPct : offsetYPct;
         const oy = (oyPct / 100) * r.height;
-        const py = oy + (0.5 - p) * parallax;
-        inner.current.style.transform = `translate(calc(-50% + ${ox}px), calc(-50% + ${py}px))`;
+        // Entrance/exit envelope: fade + scale up + rise in as the section
+        // enters, hold while it's on screen, reverse as it leaves.
+        const reveal =
+          smoothstep(0.03, 0.3, p) * (1 - smoothstep(0.7, 0.97, p));
+        const scale = 0.6 + 0.4 * reveal;
+        const revealY = (1 - reveal) * 48;
+        const py = oy + (0.5 - p) * parallax + revealY;
+        inner.current.style.transform = `translate(calc(-50% + ${ox}px), calc(-50% + ${py}px)) scale(${scale})`;
+        inner.current.style.opacity = String(loaded ? reveal : 0);
       }
     };
     const onScroll = () => {
@@ -141,7 +162,7 @@ export default function ScrollScene({
       <div
         ref={inner}
         className="scene-inner"
-        style={{ opacity: loaded ? 1 : 0, ['--size' as string]: `${sizePct}%` }}
+        style={{ opacity: 0, ['--size' as string]: `${sizePct}%` }}
       >
         {mount && (
           <Spline

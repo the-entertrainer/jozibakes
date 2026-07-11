@@ -226,6 +226,11 @@ section {
   background: var(--red);
   padding-block: clamp(2rem, 5vw, 4rem);
   overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y; /* horizontal swipe is ours; vertical still scrolls */
+}
+.reel.reel--dragging {
+  cursor: grabbing;
 }
 .reel__track {
   display: flex;
@@ -233,6 +238,8 @@ section {
   gap: clamp(0.75rem, 1.4vw, 1.25rem);
   width: max-content;
   will-change: transform;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .reel__item {
   flex: 0 0 auto;
@@ -348,8 +355,7 @@ section {
   height: var(--size, 200%);
   transform: translate(-50%, -50%);
   pointer-events: none;
-  transition: opacity 0.7s ease;
-  will-change: transform;
+  will-change: transform, opacity;
 }
 .scene-inner canvas {
   display: block;
