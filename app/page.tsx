@@ -134,6 +134,7 @@ export default function Home() {
               sizePct={330}
               offsetXPct={44}
               offsetYPct={-22}
+              mobileOffsetYPct={12}
             />
           </div>
           <div className="product__text">

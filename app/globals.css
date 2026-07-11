@@ -537,6 +537,19 @@ section {
     transform: none;
     max-width: 78%;
   }
+  /* Sweet Treats: enlarge the donut, give the stage an explicit height
+     (an aspect-ratio box with an absolutely-positioned canvas collapses to
+     0 on mobile) and pull the heading up underneath so the donut overlaps. */
+  .product--treats .product__art {
+    max-width: 100%;
+    margin-bottom: clamp(-10rem, -30vw, -5rem);
+    z-index: 2;
+  }
+  .product--treats .product__art .scene-stage {
+    width: 100%;
+    height: 80vw;
+    aspect-ratio: auto;
+  }
   .product--treats .product__text,
   .product--breads .product__text {
     grid-row: 2;

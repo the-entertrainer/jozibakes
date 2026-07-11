@@ -20,11 +20,13 @@ import { useEffect, useRef, useState } from 'react';
 type Drive = (p: number) => Record<string, number>;
 
 const DRIVES: Record<string, Drive> = {
-  // Sweet Treats — pink sprinkle donut
+  // Sweet Treats — pink sprinkle donut.
+  // Baseline tilt keeps a stylish 3/4 pose at every scroll position;
+  // spin and float layer motion on top.
   treats: (p) => ({
-    spinY: p * 360,
-    tilt: 16 * Math.sin(p * Math.PI),
-    bob: 24 * Math.sin(p * Math.PI),
+    spinY: 24 + p * 360,
+    tilt: 22 + 8 * Math.sin(p * Math.PI),
+    bob: 20 * Math.sin(p * Math.PI),
   }),
 };
 
@@ -35,6 +37,7 @@ export default function ScrollScene({
   sizePct = 200,
   offsetXPct = 0,
   offsetYPct = 0,
+  mobileOffsetYPct = 0,
 }: {
   scene: string;
   preset: keyof typeof DRIVES | string;
@@ -45,6 +48,8 @@ export default function ScrollScene({
   offsetXPct?: number;
   /** Vertical push of the model, as a % of stage height (desktop only). */
   offsetYPct?: number;
+  /** Vertical push on mobile (stacked layout), as a % of stage height. */
+  mobileOffsetYPct?: number;
 }) {
   const stage = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
@@ -95,7 +100,8 @@ export default function ScrollScene({
       if (inner.current) {
         const isMobile = window.innerWidth <= 780;
         const ox = isMobile ? 0 : (offsetXPct / 100) * r.width;
-        const oy = isMobile ? 0 : (offsetYPct / 100) * r.height;
+        const oyPct = isMobile ? mobileOffsetYPct : offsetYPct;
+        const oy = (oyPct / 100) * r.height;
         const py = oy + (0.5 - p) * parallax;
         inner.current.style.transform = `translate(calc(-50% + ${ox}px), calc(-50% + ${py}px))`;
       }
@@ -113,7 +119,7 @@ export default function ScrollScene({
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
     };
-  }, [preset, parallax, offsetXPct, offsetYPct, loaded]);
+  }, [preset, parallax, offsetXPct, offsetYPct, mobileOffsetYPct, loaded]);
 
   return (
     <div ref={stage} className="scene-stage">
