@@ -1,5 +1,6 @@
 import ScrollScene from './ScrollScene';
 import PhotoCarousel from './PhotoCarousel';
+import HeroScene from './HeroScene';
 
 const SWEET_TREATS_SCENE =
   'https://prod.spline.design/XLyPwbheYwHrlx28/scene.splinecode';
@@ -44,8 +45,10 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero */}
+      {/* Hero — fullscreen shop diorama; the camera pushes in on scroll
+          (authored in Spline — the runtime pins itself over its scroll range) */}
       <section className="hero">
+        <HeroScene />
         <div className="wrap hero__inner">
           <div className="hero__text">
             <h1 className="hero__title">
@@ -54,13 +57,9 @@ export default function Home() {
               Bakes
             </h1>
             <p className="hero__tag">&ldquo;Artisanal bakery in Kharghar.&rdquo;</p>
-            <a className="btn btn--light hero__cta" href="#contact">
+            <a className="btn btn--red hero__cta" href="#contact">
               Order Now
             </a>
-          </div>
-          <div className="hero__blocks" aria-hidden="true">
-            <div className="hero__block hero__block--green" />
-            <div className="hero__block hero__block--purple" />
           </div>
         </div>
       </section>

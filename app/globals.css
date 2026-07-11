@@ -132,58 +132,81 @@ section {
 }
 
 /* ============================================================
-   Hero
+   Hero — fullscreen Spline shop diorama. The scroll push-in is
+   authored in Spline: the runtime stretches its own canvas to the
+   scene's scroll length (~240vh) and keeps the view pinned while
+   the page scrolls over it, so we must NOT wrap it in sticky or
+   force the canvas height — just give it a natural in-flow box.
    ============================================================ */
 .hero {
-  background: var(--red);
-  color: var(--cream);
+  position: relative;
+  background: #ececec; /* matches the scene's studio backdrop */
+  /* The runtime stretches its canvas to the scene's full scroll length
+     (~215vh), whose final stretch is an empty tail after the camera
+     settles. Clipping the section to 160vh keeps the whole cloud-descent
+     and the framed-shop moment, then hands off to About — the canvas
+     rect (and so the scroll mapping) is unaffected by the clip. */
+  height: 150vh;
+  overflow: hidden;
+}
+.hero::after {
+  /* soften the hand-off: the studio gray melts into the cream of About */
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 24vh;
+  background: linear-gradient(to bottom, rgba(255, 248, 238, 0), var(--paper));
+  pointer-events: none;
+  z-index: 1;
+}
+.heroScene {
+  opacity: 0;
+  transition: opacity 1s ease;
+  touch-action: pan-y; /* horizontal gestures stay free; page still scrolls */
+}
+.heroScene--on {
+  opacity: 1;
+}
+.heroScene canvas {
+  display: block;
+  width: 100%;
+  /* height intentionally left to the Spline runtime (scroll length) */
 }
 .hero__inner {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  align-items: center;
-  gap: 2rem;
-  min-height: min(88vh, 720px);
-  padding-block: clamp(3rem, 8vw, 6rem);
+  /* overlay over the first viewport of the scene */
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  padding-top: clamp(4rem, 12vh, 8rem);
+  pointer-events: none;
+}
+.hero__inner a {
+  pointer-events: auto;
 }
 .hero__title {
+  color: var(--red);
   font-weight: 800;
   line-height: 0.9;
   letter-spacing: -0.03em;
-  font-size: clamp(3.5rem, 12vw, 9.5rem);
+  font-size: clamp(3.2rem, 10vw, 8rem);
 }
 .hero__tag {
-  margin-top: 1.25rem;
-  font-size: clamp(1.05rem, 2.2vw, 1.5rem);
-  font-weight: 400;
+  margin-top: 1.1rem;
+  color: var(--red-deep);
+  font-size: clamp(1.05rem, 2.2vw, 1.4rem);
+  font-weight: 500;
   font-style: italic;
-  opacity: 0.95;
 }
 .hero__cta {
-  margin-top: clamp(2rem, 5vw, 3.5rem);
-}
-/* Blueprint placeholder blocks (green square + purple slab) */
-.hero__blocks {
-  position: relative;
-  min-height: 380px;
-  align-self: stretch;
-}
-.hero__block {
-  position: absolute;
-}
-.hero__block--green {
-  right: 0;
-  top: 8%;
-  width: 78%;
-  height: 84%;
-  background: var(--ph-green);
-}
-.hero__block--purple {
-  right: 62%;
-  bottom: 6%;
-  width: 20%;
-  height: 55%;
-  background: var(--ph-purple);
+  margin-top: clamp(1.75rem, 4vw, 2.75rem);
 }
 
 /* ============================================================
@@ -518,14 +541,12 @@ section {
    Responsive
    ============================================================ */
 @media (max-width: 780px) {
-  .hero__inner {
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
-    text-align: left;
-  }
-  .hero__blocks {
-    min-height: 240px;
-    order: 2;
+  /* The hero scene's camera is composed for landscape; render the canvas at
+     a landscape width and slide it so the shop sits centred — the hero's
+     overflow:hidden clips the excess and the page never scrolls sideways. */
+  .heroScene {
+    width: 260vw;
+    margin-left: -66vw;
   }
   .about__grid {
     grid-template-columns: 1fr;
