@@ -401,6 +401,12 @@ section {
 .product--breads .product__art {
   grid-column: 2;
   grid-row: 1;
+  position: relative;
+  z-index: 2; /* let the loaves spill over the heading */
+}
+.product--breads .product__text {
+  position: relative;
+  z-index: 1;
 }
 
 /* ============================================================
@@ -537,15 +543,17 @@ section {
     transform: none;
     max-width: 78%;
   }
-  /* Sweet Treats: enlarge the donut, give the stage an explicit height
+  /* Product 3D scenes: enlarge the model, give the stage an explicit height
      (an aspect-ratio box with an absolutely-positioned canvas collapses to
-     0 on mobile) and pull the heading up underneath so the donut overlaps. */
-  .product--treats .product__art {
+     0 on mobile) and pull the heading up underneath so it overlaps. */
+  .product--treats .product__art,
+  .product--breads .product__art {
     max-width: 100%;
     margin-bottom: clamp(-10rem, -30vw, -5rem);
     z-index: 2;
   }
-  .product--treats .product__art .scene-stage {
+  .product--treats .product__art .scene-stage,
+  .product--breads .product__art .scene-stage {
     width: 100%;
     height: 80vw;
     aspect-ratio: auto;

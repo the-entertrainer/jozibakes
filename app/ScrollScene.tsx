@@ -28,6 +28,12 @@ const DRIVES: Record<string, Drive> = {
     tilt: 22 + 8 * Math.sin(p * Math.PI),
     bob: 20 * Math.sin(p * Math.PI),
   }),
+  // Breads — basket of loaves; same variables, tilted to show the loaves.
+  breads: (p) => ({
+    spinY: 24 + p * 360,
+    tilt: 22 + 8 * Math.sin(p * Math.PI),
+    bob: 20 * Math.sin(p * Math.PI),
+  }),
 };
 
 export default function ScrollScene({

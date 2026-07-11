@@ -2,6 +2,8 @@ import ScrollScene from './ScrollScene';
 
 const SWEET_TREATS_SCENE =
   'https://prod.spline.design/XLyPwbheYwHrlx28/scene.splinecode';
+const BREADS_SCENE =
+  'https://prod.spline.design/jcgH6ZbEJxJ40hGn/scene.splinecode';
 
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel lacus et est varius malesuada. Nullam tincidunt, libero at suscipit lacinia, justo odio convallis turpis, id tempus mauris lorem nec velit. Integer sit amet justo at nisl convallis consequat a a augue. Phasellus convallis, arcu nec cursus ultrices, turpis felis lacinia arcu, non posuere est urna quis purus. Donec vel magna ut dui facilisis vehicula. Curabitur euismod, ex nec facilisis facilisis, velit quam tincidunt est, eu tincidunt velit libero a nulla. Nam ac lacus sit amet libero facilisis dapibus a id tortor.';
@@ -158,7 +160,14 @@ export default function Home() {
             </a>
           </div>
           <div className="product__art">
-            <img src="/images/bun.png" alt="Golden baked bread bun" />
+            <ScrollScene
+              scene={BREADS_SCENE}
+              preset="breads"
+              sizePct={330}
+              offsetXPct={-44}
+              offsetYPct={-22}
+              mobileOffsetYPct={12}
+            />
           </div>
         </div>
       </section>
