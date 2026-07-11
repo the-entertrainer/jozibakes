@@ -378,7 +378,7 @@ section {
   height: var(--size, 200%);
   transform: translate(-50%, -50%);
   pointer-events: none;
-  will-change: transform, opacity;
+  transition: opacity 0.6s ease; /* gentle fade-in once the scene loads */
 }
 .scene-inner canvas {
   display: block;

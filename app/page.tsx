@@ -105,7 +105,6 @@ export default function Home() {
           <div className="product__art">
             <ScrollScene
               scene={SWEET_TREATS_SCENE}
-              preset="treats"
               sizePct={330}
               offsetXPct={44}
               offsetYPct={-22}
@@ -135,7 +134,6 @@ export default function Home() {
           <div className="product__art">
             <ScrollScene
               scene={BREADS_SCENE}
-              preset="breads"
               sizePct={330}
               offsetXPct={-44}
               offsetYPct={-22}
@@ -151,7 +149,6 @@ export default function Home() {
           <div className="product__art">
             <ScrollScene
               scene={COOKIES_SCENE}
-              preset="cookies"
               sizePct={300}
               offsetXPct={40}
               offsetYPct={-12}
@@ -181,7 +178,6 @@ export default function Home() {
           <div className="product__art">
             <ScrollScene
               scene={LOAF_CAKES_SCENE}
-              preset="loaf"
               sizePct={240}
               offsetXPct={-22}
               offsetYPct={-10}
