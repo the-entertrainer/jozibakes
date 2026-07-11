@@ -1,20 +1,30 @@
 import type { Metadata, Viewport } from 'next';
+import { Poppins } from 'next/font/google';
 import './globals.css';
 
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800', '900'],
+  variable: '--font-poppins',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: 'Jozi Bakes',
-  description: 'Jozi Bakes',
+  title: 'Jozi Bakes — Artisanal bakery in Kharghar',
+  description:
+    'Discover Jozi Bakes, an artisanal bakery crafting fresh, handmade treats like brownies, cookies, and breads with care and quality ingredients. Order now!',
+  openGraph: {
+    title: 'Jozi Bakes',
+    type: 'website',
+    description:
+      'Discover Jozi Bakes, an artisanal bakery crafting fresh, handmade treats like brownies, cookies, and breads with care and quality ingredients. Order now!',
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#000000',
-  viewportFit: 'cover',
+  themeColor: '#97191d',
   width: 'device-width',
-  height: 'device-height',
   initialScale: 1,
-  minimumScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default function RootLayout({
@@ -23,16 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://prod.spline.design" crossOrigin="anonymous" />
-        <link
-          rel="preload"
-          href="https://prod.spline.design/Le2iIYYasafjz8Ib/scene.splinecode"
-          as="fetch"
-          crossOrigin="anonymous"
-        />
-      </head>
+    <html lang="en" className={poppins.variable}>
       <body>{children}</body>
     </html>
   );
