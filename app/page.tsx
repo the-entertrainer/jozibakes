@@ -1,3 +1,8 @@
+import ScrollScene from './ScrollScene';
+
+const SWEET_TREATS_SCENE =
+  'https://prod.spline.design/XLyPwbheYwHrlx28/scene.splinecode';
+
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel lacus et est varius malesuada. Nullam tincidunt, libero at suscipit lacinia, justo odio convallis turpis, id tempus mauris lorem nec velit. Integer sit amet justo at nisl convallis consequat a a augue. Phasellus convallis, arcu nec cursus ultrices, turpis felis lacinia arcu, non posuere est urna quis purus. Donec vel magna ut dui facilisis vehicula. Curabitur euismod, ex nec facilisis facilisis, velit quam tincidunt est, eu tincidunt velit libero a nulla. Nam ac lacus sit amet libero facilisis dapibus a id tortor.';
 
@@ -123,7 +128,7 @@ export default function Home() {
       <section className="product product--treats">
         <div className="wrap product__inner">
           <div className="product__art">
-            <img src="/images/donut.png" alt="Chocolate-glazed doughnut" />
+            <ScrollScene scene={SWEET_TREATS_SCENE} preset="treats" />
           </div>
           <div className="product__text">
             <h2 className="product__head">Sweet Treats</h2>
