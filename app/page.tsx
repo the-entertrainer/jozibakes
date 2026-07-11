@@ -128,7 +128,13 @@ export default function Home() {
       <section className="product product--treats">
         <div className="wrap product__inner">
           <div className="product__art">
-            <ScrollScene scene={SWEET_TREATS_SCENE} preset="treats" />
+            <ScrollScene
+              scene={SWEET_TREATS_SCENE}
+              preset="treats"
+              sizePct={330}
+              offsetXPct={44}
+              offsetYPct={-22}
+            />
           </div>
           <div className="product__text">
             <h2 className="product__head">Sweet Treats</h2>

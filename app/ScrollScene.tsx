@@ -12,8 +12,10 @@ import { useEffect, useRef, useState } from 'react';
  * top) and feed it to the scene's exposed Number variables, plus a gentle
  * CSS parallax on the canvas so the model drifts relative to the text.
  *
- * Presets keep the drive logic serialisable so the section markup can stay
- * in a server component.
+ * `sizePct` scales the canvas relative to its stage (rendered crisp, not
+ * upscaled) and `offsetXPct` pushes the model sideways so it can overlap
+ * neighbouring copy on desktop. Presets keep the drive logic serialisable
+ * so the section markup can stay in a server component.
  */
 type Drive = (p: number) => Record<string, number>;
 
@@ -30,10 +32,19 @@ export default function ScrollScene({
   scene,
   preset,
   parallax = 42,
+  sizePct = 200,
+  offsetXPct = 0,
+  offsetYPct = 0,
 }: {
   scene: string;
   preset: keyof typeof DRIVES | string;
   parallax?: number;
+  /** Canvas size as a % of the stage. Bigger = larger, still crisp. */
+  sizePct?: number;
+  /** Horizontal push of the model, as a % of stage width (desktop only). */
+  offsetXPct?: number;
+  /** Vertical push of the model, as a % of stage height (desktop only). */
+  offsetYPct?: number;
 }) {
   const stage = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
@@ -82,7 +93,11 @@ export default function ScrollScene({
         }
       }
       if (inner.current) {
-        inner.current.style.transform = `translateY(${(0.5 - p) * parallax}px)`;
+        const isMobile = window.innerWidth <= 780;
+        const ox = isMobile ? 0 : (offsetXPct / 100) * r.width;
+        const oy = isMobile ? 0 : (offsetYPct / 100) * r.height;
+        const py = oy + (0.5 - p) * parallax;
+        inner.current.style.transform = `translate(calc(-50% + ${ox}px), calc(-50% + ${py}px))`;
       }
     };
     const onScroll = () => {
@@ -98,14 +113,14 @@ export default function ScrollScene({
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
     };
-  }, [preset, parallax, loaded]);
+  }, [preset, parallax, offsetXPct, offsetYPct, loaded]);
 
   return (
     <div ref={stage} className="scene-stage">
       <div
         ref={inner}
         className="scene-inner"
-        style={{ opacity: loaded ? 1 : 0 }}
+        style={{ opacity: loaded ? 1 : 0, ['--size' as string]: `${sizePct}%` }}
       >
         {mount && (
           <Spline
