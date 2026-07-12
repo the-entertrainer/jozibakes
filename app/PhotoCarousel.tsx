@@ -6,11 +6,13 @@ import { useEffect, useRef } from 'react';
 /**
  * Showreel + Gallery merged into one full-width horizontal ribbon.
  *
- * A repeating set — an animated "Showreel" speech bubble followed by the
- * photos — is chained end to end and wraps seamlessly. It:
- *   • auto-scrolls on its own,
- *   • shifts with the page's vertical scroll,
- *   • and can be flicked/swiped left and right (with momentum).
+ * The idle drift is a pure CSS `@keyframes` animation — it runs on the
+ * compositor thread, so it stays smooth even while the main thread is busy
+ * (Spline's WebGL scenes, image decode, React work, etc.), unlike a
+ * setInterval/rAF loop driving `style.transform` by hand. JS only steps in
+ * while a finger is actually down: it disables the animation, tracks the
+ * drag 1:1, then hands off to a single CSS transition for the release
+ * "fling" before resuming the animation exactly where it left off.
  *
  * Each photo's real pixel dimensions are given to next/image so it can
  * generate a correctly-scaled srcset — CSS still governs the rendered
@@ -44,11 +46,13 @@ const PHOTOS = [
   },
 ];
 
-const SETS = 3;
-const AUTO_SPEED = 42; // px/s idle drift
-const SCROLL_FACTOR = 0.4; // page-scroll coupling
-const FLICK_DECAY = 2.6; // momentum time-constant (per second)
-const MAX_FLICK = 2600; // px/s clamp
+// Exactly 2 — a CSS `translate3d(-50%,0,0)` loop only wraps seamlessly with
+// two identical copies of the content back to back.
+const SETS = 2;
+const DURATION_S = 34; // one full idle loop
+const FLING_MS = 900;
+const FLING_MULTIPLIER = 0.32;
+const MAX_FLING_PX = 420;
 
 function ShowreelBubble() {
   return (
@@ -71,15 +75,11 @@ export default function PhotoCarousel() {
 
     const itemsPerSet = PHOTOS.length + 1;
     let setWidth = 0;
-    let pos = 0; // accumulated travel (auto + flick + drag)
-    let momentum = 0; // px/s from a flick
     let dragging = false;
+    let dragX = 0; // track's live translateX while dragging/flinging
     let lastX = 0;
     let lastT = 0;
     let velocity = 0;
-    let last = performance.now();
-    let running = false;
-    let raf = 0;
 
     const measure = () => {
       if (track.children.length > itemsPerSet) {
@@ -89,78 +89,77 @@ export default function PhotoCarousel() {
       }
     };
 
-    const apply = () => {
+    // Reads the track's current on-screen X offset, whether it's currently
+    // driven by the CSS animation, a transition, or an inline style.
+    const currentTranslateX = () => {
+      const m = new DOMMatrixReadOnly(getComputedStyle(track).transform);
+      return m.m41;
+    };
+
+    // Hands control back to the CSS animation, seeking it to `x` via a
+    // negative animation-delay so playback continues from exactly where
+    // the drag/fling left off — no visible jump.
+    const resumeAnimation = (x: number) => {
       if (!setWidth) measure();
       if (setWidth > 0) {
-        const raw = pos + window.scrollY * SCROLL_FACTOR;
-        const wrapped = ((raw % setWidth) + setWidth) % setWidth;
-        track.style.transform = `translate3d(${-wrapped}px,0,0)`;
+        const norm = ((x % setWidth) + setWidth) % setWidth;
+        track.style.animationDelay = `${-(norm / setWidth) * DURATION_S}s`;
       }
+      track.style.transition = '';
+      track.style.transform = '';
+      section.classList.remove('reel--dragging');
     };
 
-    const frame = (now: number) => {
-      const dt = Math.min((now - last) / 1000, 0.05);
-      last = now;
-      if (!dragging) {
-        pos += (AUTO_SPEED + momentum) * dt;
-        momentum *= Math.exp(-FLICK_DECAY * dt);
-        if (Math.abs(momentum) < 1) momentum = 0;
-      }
-      apply();
-      raf = requestAnimationFrame(frame);
-    };
-
-    const start = () => {
-      if (running) return;
-      running = true;
-      last = performance.now();
-      raf = requestAnimationFrame(frame);
-    };
-    const stop = () => {
-      running = false;
-      cancelAnimationFrame(raf);
-    };
-
-    // Pointer / touch flick control
     const onDown = (e: PointerEvent) => {
       dragging = true;
-      momentum = 0;
+      dragX = currentTranslateX();
       velocity = 0;
       lastX = e.clientX;
       lastT = performance.now();
       section.setPointerCapture?.(e.pointerId);
+      // adding this class disables the CSS animation (see globals.css) so
+      // the inline transform below takes sole ownership of the property
       section.classList.add('reel--dragging');
+      track.style.transition = 'none';
+      track.style.transform = `translate3d(${dragX}px,0,0)`;
     };
+
     const onMove = (e: PointerEvent) => {
       if (!dragging) return;
       const now = performance.now();
       const dx = e.clientX - lastX;
       const dt = Math.max((now - lastT) / 1000, 0.008);
-      pos -= dx; // ribbon follows the finger
+      dragX += dx;
       velocity = dx / dt;
       lastX = e.clientX;
       lastT = now;
-      apply();
+      track.style.transform = `translate3d(${dragX}px,0,0)`;
     };
+
     const onUp = (e: PointerEvent) => {
       if (!dragging) return;
       dragging = false;
-      momentum = Math.max(-MAX_FLICK, Math.min(MAX_FLICK, -velocity));
       section.releasePointerCapture?.(e.pointerId);
-      section.classList.remove('reel--dragging');
+
+      const fling = Math.max(
+        -MAX_FLING_PX,
+        Math.min(MAX_FLING_PX, velocity * FLING_MULTIPLIER),
+      );
+      const target = dragX + fling;
+      track.style.transition = `transform ${FLING_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`;
+      track.style.transform = `translate3d(${target}px,0,0)`;
+
+      const onEnd = () => {
+        track.removeEventListener('transitionend', onEnd);
+        resumeAnimation(target);
+      };
+      track.addEventListener('transitionend', onEnd, { once: true });
     };
 
     section.addEventListener('pointerdown', onDown);
     section.addEventListener('pointermove', onMove);
     section.addEventListener('pointerup', onUp);
     section.addEventListener('pointercancel', onUp);
-
-    // Only animate while the ribbon is on screen.
-    const io = new IntersectionObserver(
-      (entries) => (entries[0].isIntersecting ? start() : stop()),
-      { rootMargin: '100px 0px' },
-    );
-    io.observe(section);
 
     const onResize = () => {
       setWidth = 0;
@@ -170,8 +169,6 @@ export default function PhotoCarousel() {
     measure();
 
     return () => {
-      stop();
-      io.disconnect();
       window.removeEventListener('resize', onResize);
       section.removeEventListener('pointerdown', onDown);
       section.removeEventListener('pointermove', onMove);
@@ -181,12 +178,12 @@ export default function PhotoCarousel() {
   }, []);
 
   return (
-    <section
-      className="reel grain"
-      aria-label="Showreel gallery"
-      ref={sectionRef}
-    >
-      <div className="reel__track" ref={trackRef}>
+    <section className="reel" aria-label="Showreel gallery" ref={sectionRef}>
+      <div
+        className="reel__track"
+        ref={trackRef}
+        style={{ ['--reel-duration' as string]: `${DURATION_S}s` }}
+      >
         {Array.from({ length: SETS }).flatMap((_, s) => [
           <ShowreelBubble key={`b-${s}`} />,
           ...PHOTOS.map((p, i) => (

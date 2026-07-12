@@ -237,9 +237,10 @@ section {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(151, 25, 29, 0.92);
-  backdrop-filter: blur(10px) saturate(1.2);
-  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  /* a solid fill instead of backdrop-filter: blur — backdrop-filter is one
+     of the most GPU-expensive CSS features, and on a `position: sticky`
+     bar it has to resample on every scroll frame. Not worth it here. */
+  background: var(--red);
   color: var(--cream);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08), 0 12px 30px -18px rgba(0, 0, 0, 0.35);
   /* clears the status bar / Dynamic Island so the sticky bar never sits
@@ -465,22 +466,72 @@ section {
 .reel__track {
   display: flex;
   align-items: center;
-  gap: clamp(0.75rem, 1.4vw, 1.25rem);
+  gap: clamp(1.25rem, 2.4vw, 2.25rem);
   width: max-content;
   will-change: transform;
   user-select: none;
   -webkit-user-select: none;
+  /* idle drift lives entirely on the compositor thread — smooth no matter
+     what the main thread (Spline, React, image decode…) is doing. JS only
+     touches transform while a finger is down (see .reel--dragging below). */
+  animation: reelMarquee var(--reel-duration, 34s) linear infinite;
+}
+.reel.reel--dragging .reel__track {
+  /* fully removed, not just paused — a paused CSS animation still wins the
+     cascade over an inline transform, which would fight the drag/fling */
+  animation: none;
+}
+@keyframes reelMarquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reel__track {
+    animation: none;
+  }
 }
 .reel__item {
   flex: 0 0 auto;
   height: clamp(230px, 42vh, 460px);
+}
+/* Polaroid-style photo cards — a white frame, a little shadow, and a
+   consistent per-photo tilt (the same photo always leans the same way,
+   even though it repeats) read as tossed-down snapshots instead of a
+   uniform stock-image strip. */
+.reel__item:not(.reel__bubble) {
+  box-sizing: border-box;
+  padding: 10px 10px 26px;
+  background: var(--paper);
+  border-radius: 8px;
+  box-shadow: 0 18px 30px -14px rgba(0, 0, 0, 0.5);
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 0.25s var(--ease-cinematic);
+}
+.reel__item:not(.reel__bubble):hover {
+  transform: rotate(0deg) scale(1.035);
+}
+.reel__item:nth-child(5n + 2) {
+  --tilt: -2.4deg;
+}
+.reel__item:nth-child(5n + 3) {
+  --tilt: 1.8deg;
+}
+.reel__item:nth-child(5n + 4) {
+  --tilt: -1.6deg;
+}
+.reel__item:nth-child(5n + 5) {
+  --tilt: 2.2deg;
 }
 .reel__item img {
   height: 100%;
   width: auto;
   display: block;
   object-fit: cover;
-  border-radius: 14px;
+  border-radius: 2px;
 }
 /* Animated "Showreel" speech bubble */
 .reel__bubble {
