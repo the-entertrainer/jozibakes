@@ -20,13 +20,21 @@ const Spline = dynamic(() => import('./SplineLazy'), { ssr: false });
  * If the scene fails to load — a dropped request on a slow mobile connection,
  * or a Spline outage — a static render of the same shop stands in, so the
  * hero never collapses into an empty page.
+ *
+ * `disabled` skips Spline entirely — no mount, no network request, just the
+ * fallback image from the start. Same isolation mechanism as ScrollScene's
+ * `disabled` prop, for testing scenes one at a time.
  */
 const HERO_SCENE =
   'https://prod.spline.design/Le2iIYYasafjz8Ib/scene.splinecode';
 
-export default function HeroScene() {
+export default function HeroScene({
+  disabled = false,
+}: {
+  disabled?: boolean;
+}) {
   const [loaded, setLoaded] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState(disabled);
 
   if (failed) {
     return (

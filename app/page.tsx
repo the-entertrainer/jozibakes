@@ -80,7 +80,7 @@ export default function Home() {
       {/* Hero — fullscreen shop diorama; the camera pushes in on scroll
           (authored in Spline — the runtime pins itself over its scroll range) */}
       <section className="hero">
-        <HeroScene />
+        <HeroScene disabled />
         <div className="wrap hero__inner">
           <div className="hero__text">
             <Reveal as="h1" variant="clip" className="hero__title">
