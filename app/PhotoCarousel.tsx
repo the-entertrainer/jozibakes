@@ -12,10 +12,10 @@ import { useEffect, useRef } from 'react';
  *   • and can be flicked/swiped left and right (with momentum).
  */
 const PHOTOS = [
-  { src: '/images/rolls.png', alt: 'Freshly baked golden dinner rolls' },
-  { src: '/images/gallery-babka.jpg', alt: 'Caramel babka loaf' },
-  { src: '/images/gallery-cookie.jpg', alt: 'Chocolate-drizzled cookies' },
-  { src: '/images/gallery-bread.jpg', alt: 'Sliced artisan ciabatta bread' },
+  { src: '/images/rolls.webp', alt: 'Freshly baked golden dinner rolls' },
+  { src: '/images/gallery-babka.webp', alt: 'Caramel babka loaf' },
+  { src: '/images/gallery-cookie.webp', alt: 'Chocolate-drizzled cookies' },
+  { src: '/images/gallery-bread.webp', alt: 'Sliced artisan ciabatta bread' },
 ];
 
 const SETS = 3;

@@ -62,7 +62,10 @@ a {
   width: 100%;
   max-width: var(--maxw);
   margin-inline: auto;
-  padding-inline: var(--pad);
+  /* env() keeps content clear of the notch/rounded-corner cutout in
+     landscape on iPhone; falls back to plain --pad everywhere else */
+  padding-left: calc(var(--pad) + env(safe-area-inset-left, 0px));
+  padding-right: calc(var(--pad) + env(safe-area-inset-right, 0px));
 }
 
 section {
@@ -239,6 +242,9 @@ section {
   -webkit-backdrop-filter: blur(10px) saturate(1.2);
   color: var(--cream);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08), 0 12px 30px -18px rgba(0, 0, 0, 0.35);
+  /* clears the status bar / Dynamic Island so the sticky bar never sits
+     underneath it */
+  padding-top: env(safe-area-inset-top, 0px);
 }
 .nav__inner {
   display: flex;
@@ -253,10 +259,15 @@ section {
   font-size: 1.05rem;
 }
 .nav__cta {
+  display: inline-block;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   font-size: 0.8rem;
+  /* the text itself is barely 16px tall — pad the hit area out to a
+     comfortable thumb target without shifting the visible label */
+  padding: 1em 0.2em;
+  margin: -1em -0.2em;
 }
 .nav__cta:hover {
   opacity: 0.8;
@@ -305,6 +316,37 @@ section {
   width: 100%;
   /* height intentionally left to the Spline runtime (scroll length) */
 }
+/* Static fallback hero — a rendered still of the same shop diorama, shown
+   if the Spline scene itself fails to load. Compound selector so it beats
+   the mobile `.heroScene` landscape-composition override below regardless
+   of source order. */
+.heroScene.heroScene--fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin-left: 0;
+}
+.heroScene__fallbackImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 22%;
+}
+.heroScene--fallback::before {
+  /* guarantees the dark-red title stays legible no matter what ends up
+     behind it once the image is cropped to the hero's tall aspect ratio */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(242, 226, 196, 0.9) 0%,
+    rgba(242, 226, 196, 0.55) 30%,
+    rgba(242, 226, 196, 0) 58%
+  );
+  pointer-events: none;
+}
+
 .hero__inner {
   /* overlay over the first viewport of the scene */
   position: absolute;
@@ -552,6 +594,64 @@ section {
   height: 100% !important;
 }
 
+/* Loading shimmer — a soft pulsing blob standing in for the model while its
+   (often multi-MB) scene streams in, so slow mobile connections see life
+   instead of dead space. */
+.scene-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 46%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 34% 30%,
+    rgba(255, 255, 255, 0.6),
+    rgba(151, 25, 29, 0.14) 60%,
+    transparent 74%
+  );
+  animation: scenePulse 1.8s ease-in-out infinite;
+}
+@keyframes scenePulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.92);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.05);
+    opacity: 0.95;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-loading {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* Static fallback shown if a scene fails to load entirely — keeps the
+   section looking finished instead of an empty stage. */
+.scene-fallback {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.scene-fallback--float {
+  width: 78%;
+  height: auto;
+}
+.scene-fallback--card {
+  width: 84%;
+  height: 84%;
+  object-fit: cover;
+  border-radius: 22px;
+  box-shadow: 0 25px 45px -18px rgba(0, 0, 0, 0.4);
+}
+
 /* Sweet Treats / Cookies — red bg, art overlaps from the left */
 .product--treats,
 .product--cookies {
@@ -650,8 +750,13 @@ section {
   font-size: clamp(2.6rem, 8vw, 6rem);
 }
 .contact__social {
+  display: inline-flex;
   color: var(--red-deep);
   flex-shrink: 0;
+  /* icon alone is as small as 30px — pad the hit area to a proper thumb
+     target while keeping its visual size and position unchanged */
+  padding: 0.5rem;
+  margin: -0.5rem;
 }
 .contact__social:hover {
   opacity: 0.7;
@@ -685,7 +790,9 @@ section {
 .footer {
   background: var(--red);
   color: var(--cream);
-  padding-block: 1.5rem;
+  padding-top: 1.5rem;
+  /* clears the home-indicator bar on notched phones */
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
 }
 .footer__inner {
   display: flex;
@@ -698,6 +805,11 @@ section {
 .footer__links {
   display: flex;
   gap: 1.75rem;
+}
+.footer__links a {
+  display: inline-block;
+  padding-block: 0.6em;
+  margin-block: -0.6em;
 }
 .footer__links a:hover {
   opacity: 0.75;

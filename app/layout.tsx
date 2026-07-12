@@ -33,6 +33,9 @@ export const viewport: Viewport = {
   themeColor: '#97191d',
   width: 'device-width',
   initialScale: 1,
+  // lets the safe-area-inset-* CSS env() vars resolve on notched / Dynamic
+  // Island phones, so the sticky nav and footer never sit under the cutout
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({

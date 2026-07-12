@@ -90,7 +90,7 @@ export default function Home() {
             <Reveal variant="scale" className="about__visual">
               <div className="about__visualShape" aria-hidden="true" />
               <img
-                src="/images/gallery-babka.jpg"
+                src="/images/gallery-babka.webp"
                 alt="Fresh caramel babka loaf from Jozi Bakes"
                 className="about__photo"
               />
@@ -143,6 +143,9 @@ export default function Home() {
               offsetXPct={44}
               offsetYPct={-22}
               mobileOffsetYPct={12}
+              fallbackSrc="/images/donut.webp"
+              fallbackAlt="Chocolate-drizzled donut"
+              fallbackMode="float"
             />
           </div>
           <div className="product__text">
@@ -190,6 +193,9 @@ export default function Home() {
               offsetXPct={-44}
               offsetYPct={-22}
               mobileOffsetYPct={12}
+              fallbackSrc="/images/bun.webp"
+              fallbackAlt="Freshly baked milk buns"
+              fallbackMode="float"
             />
           </div>
         </div>
@@ -205,6 +211,9 @@ export default function Home() {
               offsetXPct={40}
               offsetYPct={-12}
               mobileOffsetYPct={14}
+              fallbackSrc="/images/gallery-cookie.webp"
+              fallbackAlt="Chocolate-drizzled cookies"
+              fallbackMode="card"
             />
           </div>
           <div className="product__text">
@@ -252,6 +261,9 @@ export default function Home() {
               offsetXPct={-22}
               offsetYPct={-10}
               mobileOffsetYPct={12}
+              fallbackSrc="/images/gallery-babka.webp"
+              fallbackAlt="Caramel babka loaf cake"
+              fallbackMode="card"
             />
           </div>
         </div>
@@ -261,7 +273,7 @@ export default function Home() {
       <section id="contact">
         <div className="storefront">
           <img
-            src="/images/storefront.jpg"
+            src="/images/storefront.webp"
             alt="The Jozi Bakes storefront with Jozi and Bruno"
           />
         </div>
