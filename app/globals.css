@@ -71,6 +71,45 @@ a {
 section {
   position: relative;
   overflow: hidden;
+  /* establishes a stacking context on every section so a negative z-index
+     inside one (see .section-num) stays scoped to it instead of escaping
+     to paint behind neighbouring sections */
+  z-index: 0;
+}
+
+/* Big architectural chapter numbers — the page's answer to str8fire-style
+   numeric anchors. Outlined, low-opacity, sits behind the section's own
+   content; -webkit-text-stroke is broadly supported, with a plain faint
+   fill as the fallback for the few browsers that don't. */
+.section-num {
+  position: absolute;
+  z-index: -1;
+  top: clamp(0.5rem, 2vw, 1.75rem);
+  right: clamp(0.5rem, 3vw, 2.5rem);
+  font-family: var(--font);
+  font-weight: 800;
+  font-size: clamp(6rem, 20vw, 13rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: transparent;
+  /* explicit stroke colour, NOT currentColor — currentColor would resolve
+     against this same element's `color: transparent` above and vanish */
+  -webkit-text-stroke-width: 2px;
+  -webkit-text-stroke-color: var(--section-num-color, var(--red-deep));
+  opacity: 0.22;
+  pointer-events: none;
+  user-select: none;
+}
+@supports not (-webkit-text-stroke-width: 1px) {
+  .section-num {
+    color: var(--section-num-color, var(--red-deep));
+    opacity: 0.1;
+  }
+}
+/* on red-background sections the marker needs to read in cream instead */
+.product--treats,
+.product--cookies {
+  --section-num-color: var(--cream);
 }
 
 /* Chapter labels — small "scene number" tags that sit above each section
@@ -186,6 +225,17 @@ section {
   .reveal--clip {
     transform: none;
   }
+}
+
+/* A soft curved lift at a section's top edge instead of a hard color cut —
+   reserved for the two biggest beats in the page's rhythm (showreel
+   entrance, footer close) rather than every alternating band, so it reads
+   as a considered flourish and not a repeated gimmick. */
+.curve-in {
+  position: relative;
+  z-index: 1;
+  border-radius: clamp(20px, 4vw, 44px) clamp(20px, 4vw, 44px) 0 0;
+  margin-top: clamp(-22px, -3vw, -36px);
 }
 
 /* Fixed scroll-progress hairline — a quiet chapter-timeline cue. */
@@ -368,9 +418,9 @@ section {
 .hero__title {
   color: var(--red);
   font-weight: 800;
-  line-height: 0.9;
-  letter-spacing: -0.03em;
-  font-size: clamp(3.2rem, 10vw, 8rem);
+  line-height: 0.84;
+  letter-spacing: -0.045em;
+  font-size: clamp(3.8rem, 14vw, 11.5rem);
 }
 .hero__tag {
   margin-top: 1.1rem;
@@ -383,6 +433,53 @@ section {
 .hero__cta {
   margin-top: clamp(1.75rem, 4vw, 2.75rem);
 }
+.hero__scrollCue {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.5rem, 5vh, 3rem);
+  z-index: 2;
+  width: 26px;
+  height: 42px;
+  border: 2px solid var(--red-deep);
+  border-radius: 999px;
+  opacity: 0.6;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.hero__scrollCue span {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 4px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--red-deep);
+  transform: translateX(-50%);
+  animation: scrollCueDrift 1.8s ease-in-out infinite;
+}
+@keyframes scrollCueDrift {
+  0% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translate(-50%, 14px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__scrollCue span {
+    animation: none;
+  }
+}
+@media (max-width: 780px) {
+  .hero__scrollCue {
+    display: none; /* the hero is already tight on mobile; skip the cue */
+  }
+}
 
 /* ============================================================
    About
@@ -390,13 +487,13 @@ section {
 .about {
   background: var(--paper);
   color: var(--red-deep);
-  padding-block: clamp(3rem, 8vw, 6rem);
+  padding-block: clamp(4.5rem, 11vw, 8.5rem);
 }
 .about__head {
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 0.9;
-  font-size: clamp(3rem, 9vw, 7rem);
+  letter-spacing: -0.04em;
+  line-height: 0.85;
+  font-size: clamp(3.4rem, 11vw, 8.5rem);
   margin-bottom: clamp(1.5rem, 4vw, 3rem);
 }
 .about__grid {
@@ -593,7 +690,7 @@ section {
    Product bands (Sweet Treats / Breads)
    ============================================================ */
 .product {
-  padding-block: clamp(3.5rem, 9vw, 7rem);
+  padding-block: clamp(4.5rem, 12vw, 10rem);
 }
 .product__inner {
   display: grid;
@@ -602,9 +699,9 @@ section {
 }
 .product__head {
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 0.9;
-  font-size: clamp(3rem, 9vw, 6.5rem);
+  letter-spacing: -0.04em;
+  line-height: 0.85;
+  font-size: clamp(3.4rem, 10vw, 7.5rem);
 }
 .product__copy {
   font-size: clamp(1rem, 1.4vw, 1.2rem);
@@ -642,6 +739,38 @@ section {
   display: block;
   width: 100% !important;
   height: 100% !important;
+}
+
+/* Scroll-choreographed staging for the 3D pieces — as each one scrolls
+   into view it settles in from a slight scale/tilt, instead of just being
+   statically there. Pure CSS scroll-driven animation (animation-timeline:
+   view()): it runs on the compositor with zero JS involvement, so it can't
+   reintroduce the main-thread jank the showreel had. `.scene-stage` has no
+   other transform on it, so this can't conflict with ScrollScene's own
+   placement logic on its child `.scene-inner`. Browsers without support
+   (Firefox, older Safari) just show the scene at rest — no fallback code
+   needed, the animation simply doesn't apply.  */
+@supports (animation-timeline: view()) {
+  .scene-stage {
+    animation: sceneEnter linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 70%;
+  }
+}
+@keyframes sceneEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.8) rotate(-2.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-stage {
+    animation: none;
+  }
 }
 
 /* Loading shimmer — a soft pulsing blob standing in for the model while its
@@ -783,9 +912,10 @@ section {
   object-position: center 60%;
 }
 .contact {
+  position: relative;
   background: var(--paper);
   color: var(--red-deep);
-  padding-block: clamp(3rem, 8vw, 5.5rem);
+  padding-block: clamp(4rem, 10vw, 7rem);
 }
 .contact__top {
   display: flex;
@@ -796,9 +926,9 @@ section {
 }
 .contact__head {
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 0.9;
-  font-size: clamp(2.6rem, 8vw, 6rem);
+  letter-spacing: -0.04em;
+  line-height: 0.85;
+  font-size: clamp(2.8rem, 9vw, 6.5rem);
 }
 .contact__social {
   display: inline-flex;

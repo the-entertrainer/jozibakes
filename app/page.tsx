@@ -4,6 +4,7 @@ import PhotoCarousel from './PhotoCarousel';
 import HeroScene from './HeroScene';
 import Reveal from './Reveal';
 import ScrollProgress from './ScrollProgress';
+import MagneticLink from './MagneticLink';
 
 const SWEET_TREATS_SCENE =
   'https://prod.spline.design/XLyPwbheYwHrlx28/scene.splinecode';
@@ -16,6 +17,14 @@ const LOAF_CAKES_SCENE =
 
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel lacus et est varius malesuada. Nullam tincidunt, libero at suscipit lacinia, justo odio convallis turpis, id tempus mauris lorem nec velit. Integer sit amet justo at nisl convallis consequat a a augue. Phasellus convallis, arcu nec cursus ultrices, turpis felis lacinia arcu, non posuere est urna quis purus. Donec vel magna ut dui facilisis vehicula. Curabitur euismod, ex nec facilisis facilisis, velit quam tincidunt est, eu tincidunt velit libero a nulla. Nam ac lacus sit amet libero facilisis dapibus a id tortor.';
+
+function SectionNum({ n }: { n: string }) {
+  return (
+    <span className="section-num" aria-hidden="true">
+      {n}
+    </span>
+  );
+}
 
 function InstagramIcon() {
   return (
@@ -70,19 +79,23 @@ export default function Home() {
               &ldquo;Artisanal bakery in Kharghar.&rdquo;
             </Reveal>
             <Reveal variant="up" delay={280} className="hero__cta">
-              <a className="btn btn--red" href="#contact">
+              <MagneticLink className="btn btn--red" href="#contact">
                 Order Now
-              </a>
+              </MagneticLink>
             </Reveal>
           </div>
+        </div>
+        <div className="hero__scrollCue" aria-hidden="true">
+          <span />
         </div>
       </section>
 
       {/* About */}
       <section className="about grain">
+        <SectionNum n="01" />
         <div className="wrap">
           <Reveal as="span" variant="fade" className="eyebrow">
-            01 — About
+            About
           </Reveal>
           <Reveal as="h2" variant="clip" className="about__head">
             About
@@ -138,6 +151,7 @@ export default function Home() {
 
       {/* Sweet Treats */}
       <section className="product product--treats grain">
+        <SectionNum n="02" />
         <div className="wrap product__inner">
           <div className="product__art">
             <ScrollScene
@@ -153,7 +167,7 @@ export default function Home() {
           </div>
           <div className="product__text">
             <Reveal as="span" variant="fade" className="eyebrow">
-              02 — Sweet Treats
+              Sweet Treats
             </Reveal>
             <Reveal as="h2" variant="clip" className="product__head">
               Sweet Treats
@@ -162,9 +176,9 @@ export default function Home() {
               {LOREM}
             </Reveal>
             <Reveal variant="up" delay={200} className="product__cta">
-              <a className="btn btn--light" href="#contact">
+              <MagneticLink className="btn btn--light" href="#contact">
                 Order Now
-              </a>
+              </MagneticLink>
             </Reveal>
           </div>
         </div>
@@ -172,10 +186,11 @@ export default function Home() {
 
       {/* Breads */}
       <section className="product product--breads grain">
+        <SectionNum n="03" />
         <div className="wrap product__inner">
           <div className="product__text">
             <Reveal as="span" variant="fade" className="eyebrow">
-              03 — Breads
+              Breads
             </Reveal>
             <Reveal as="h2" variant="clip" className="product__head">
               Breads
@@ -184,9 +199,9 @@ export default function Home() {
               {LOREM}
             </Reveal>
             <Reveal variant="up" delay={200} className="product__cta">
-              <a className="btn btn--red" href="#contact">
+              <MagneticLink className="btn btn--red" href="#contact">
                 Order Now
-              </a>
+              </MagneticLink>
             </Reveal>
           </div>
           <div className="product__art">
@@ -206,6 +221,7 @@ export default function Home() {
 
       {/* Cookies */}
       <section className="product product--cookies grain">
+        <SectionNum n="04" />
         <div className="wrap product__inner">
           <div className="product__art">
             <ScrollScene
@@ -221,7 +237,7 @@ export default function Home() {
           </div>
           <div className="product__text">
             <Reveal as="span" variant="fade" className="eyebrow">
-              04 — Cookies
+              Cookies
             </Reveal>
             <Reveal as="h2" variant="clip" className="product__head">
               Cookies
@@ -230,9 +246,9 @@ export default function Home() {
               {LOREM}
             </Reveal>
             <Reveal variant="up" delay={200} className="product__cta">
-              <a className="btn btn--light" href="#contact">
+              <MagneticLink className="btn btn--light" href="#contact">
                 Order Now
-              </a>
+              </MagneticLink>
             </Reveal>
           </div>
         </div>
@@ -240,10 +256,11 @@ export default function Home() {
 
       {/* Loaf Cakes */}
       <section className="product product--loaf grain">
+        <SectionNum n="05" />
         <div className="wrap product__inner">
           <div className="product__text">
             <Reveal as="span" variant="fade" className="eyebrow">
-              05 — Loaf Cakes
+              Loaf Cakes
             </Reveal>
             <Reveal as="h2" variant="clip" className="product__head">
               Loaf Cakes
@@ -252,9 +269,9 @@ export default function Home() {
               {LOREM}
             </Reveal>
             <Reveal variant="up" delay={200} className="product__cta">
-              <a className="btn btn--red" href="#contact">
+              <MagneticLink className="btn btn--red" href="#contact">
                 Order Now
-              </a>
+              </MagneticLink>
             </Reveal>
           </div>
           <div className="product__art">
@@ -283,9 +300,10 @@ export default function Home() {
           />
         </div>
         <div className="contact grain">
+          <SectionNum n="06" />
           <div className="wrap">
             <Reveal as="span" variant="fade" className="eyebrow">
-              06 — Visit Us
+              Visit Us
             </Reveal>
             <div className="contact__top">
               <Reveal as="h2" variant="clip" className="contact__head">
@@ -323,7 +341,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="footer grain">
+      <footer className="footer grain curve-in">
         <div className="wrap footer__inner">
           <span>&copy; {new Date().getFullYear()} Jozi Bakes</span>
           <div className="footer__links">

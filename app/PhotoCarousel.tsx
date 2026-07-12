@@ -178,7 +178,11 @@ export default function PhotoCarousel() {
   }, []);
 
   return (
-    <section className="reel" aria-label="Showreel gallery" ref={sectionRef}>
+    <section
+      className="reel curve-in"
+      aria-label="Showreel gallery"
+      ref={sectionRef}
+    >
       <div
         className="reel__track"
         ref={trackRef}
