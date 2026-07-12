@@ -1,13 +1,14 @@
 import Image from 'next/image';
 import ScrollScene from './ScrollScene';
 import PhotoCarousel from './PhotoCarousel';
-import HeroScene from './HeroScene';
 import Reveal from './Reveal';
 import ScrollProgress from './ScrollProgress';
 import MagneticLink from './MagneticLink';
 import EntranceGate from './EntranceGate';
 import Accordion from './Accordion';
 
+const HERO_SCENE =
+  'https://prod.spline.design/Le2iIYYasafjz8Ib/scene.splinecode';
 const SWEET_TREATS_SCENE =
   'https://prod.spline.design/XLyPwbheYwHrlx28/scene.splinecode';
 const BREADS_SCENE =
@@ -15,7 +16,7 @@ const BREADS_SCENE =
 const COOKIES_SCENE =
   'https://prod.spline.design/ltNfQI5ZTwL2Hsh9/scene.splinecode';
 const LOAF_CAKES_SCENE =
-  'https://prod.spline.design/Qu9P3tpZXhPQy7BF/scene.splinecode';
+  'https://prod.spline.design/XHTySNkj3qMwFQ1u/scene.splinecode';
 
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel lacus et est varius malesuada. Nullam tincidunt, libero at suscipit lacinia, justo odio convallis turpis, id tempus mauris lorem nec velit. Integer sit amet justo at nisl convallis consequat a a augue. Phasellus convallis, arcu nec cursus ultrices, turpis felis lacinia arcu, non posuere est urna quis purus. Donec vel magna ut dui facilisis vehicula. Curabitur euismod, ex nec facilisis facilisis, velit quam tincidunt est, eu tincidunt velit libero a nulla. Nam ac lacus sit amet libero facilisis dapibus a id tortor.';
@@ -77,10 +78,10 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero — fullscreen shop diorama; the camera pushes in on scroll
-          (authored in Spline — the runtime pins itself over its scroll range) */}
+      {/* Hero — contained, max-width like every other section; the shop
+          diorama sits as a visual artifact rather than a fullscreen,
+          scroll-pinned background */}
       <section className="hero">
-        <HeroScene disabled />
         <div className="wrap hero__inner">
           <div className="hero__text">
             <Reveal as="h1" variant="clip" className="hero__title">
@@ -97,14 +98,19 @@ export default function Home() {
               &ldquo;Artisanal bakery in Kharghar.&rdquo;
             </Reveal>
             <Reveal variant="up" delay={280} className="hero__cta">
-              <MagneticLink className="btn btn--red" href="#contact">
+              <MagneticLink className="btn btn--light" href="#contact">
                 Order Now
               </MagneticLink>
             </Reveal>
           </div>
-        </div>
-        <div className="hero__scrollCue" aria-hidden="true">
-          <span />
+          <div className="hero__art">
+            <ScrollScene
+              scene={HERO_SCENE}
+              fallbackSrc="/images/storefront.webp"
+              fallbackAlt="The Jozi Bakes storefront with Jozi and Bruno"
+              fallbackMode="card"
+            />
+          </div>
         </div>
       </section>
 
@@ -245,7 +251,6 @@ export default function Home() {
               fallbackSrc="/images/gallery-cookie.webp"
               fallbackAlt="Chocolate-drizzled cookies"
               fallbackMode="card"
-              disabled
             />
           </div>
           <div className="product__text">
@@ -299,7 +304,6 @@ export default function Home() {
               fallbackSrc="/images/gallery-babka.webp"
               fallbackAlt="Caramel babka loaf cake"
               fallbackMode="card"
-              disabled
             />
           </div>
         </div>

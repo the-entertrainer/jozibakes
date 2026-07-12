@@ -402,103 +402,37 @@ section {
 }
 
 /* ============================================================
-   Hero — fullscreen Spline shop diorama. The scroll push-in is
-   authored in Spline: the runtime stretches its own canvas to the
-   scene's scroll length (~240vh) and keeps the view pinned while
-   the page scrolls over it, so we must NOT wrap it in sticky or
-   force the canvas height — just give it a natural in-flow box.
+   Hero — contained like every other section (no fullscreen pin).
+   The shop diorama sits in .hero__art as a visual artifact, sized
+   by .scene-stage the same way the product scenes are; Spline's own
+   React export fills it natively with no scale/offset math on our end.
    ============================================================ */
 .hero {
   position: relative;
-  background: #ececec; /* matches the scene's studio backdrop */
-  /* The runtime stretches its canvas to the scene's full scroll length
-     (~215vh), whose final stretch is an empty tail after the camera
-     settles. Clipping the section to 160vh keeps the whole cloud-descent
-     and the framed-shop moment, then hands off to About — the canvas
-     rect (and so the scroll mapping) is unaffected by the clip. */
-  height: 150vh;
-  overflow: hidden;
+  background: var(--red);
+  color: var(--cream);
+  padding-block: clamp(5.5rem, 16vw, 9rem) clamp(4.5rem, 12vw, 8rem);
 }
-.hero::after {
-  /* soften the hand-off: the studio gray melts into the cream of About */
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 24vh;
-  background: linear-gradient(to bottom, rgba(255, 248, 238, 0), var(--paper));
-  pointer-events: none;
-  z-index: 1;
-}
-.heroScene {
-  opacity: 0;
-  transition: opacity 1s ease;
-  touch-action: pan-y; /* horizontal gestures stay free; page still scrolls */
-}
-.heroScene--on {
-  opacity: 1;
-}
-.heroScene canvas {
-  display: block;
-  width: 100%;
-  /* height intentionally left to the Spline runtime (scroll length) */
-}
-/* Static fallback hero — a rendered still of the same shop diorama, shown
-   if the Spline scene itself fails to load. */
-.heroScene.heroScene--fallback {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-}
-.heroScene__fallbackImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 22%;
-}
-.heroScene--fallback::before {
-  /* guarantees the dark-red title stays legible no matter what ends up
-     behind it once the image is cropped to the hero's tall aspect ratio */
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(242, 226, 196, 0.9) 0%,
-    rgba(242, 226, 196, 0.55) 30%,
-    rgba(242, 226, 196, 0) 58%
-  );
-  pointer-events: none;
-}
-
 .hero__inner {
-  /* overlay over the first viewport of the scene */
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100vh;
-  height: 100dvh;
-  z-index: 2;
-  display: flex;
-  align-items: flex-start;
-  padding-top: clamp(4rem, 12vh, 8rem);
-  pointer-events: none;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 3rem);
 }
-.hero__inner a {
-  pointer-events: auto;
+.hero__art {
+  filter: drop-shadow(0 25px 40px rgba(0, 0, 0, 0.3));
 }
 .hero__title {
-  color: var(--red);
+  color: var(--cream);
   font-weight: 800;
   line-height: 0.84;
   letter-spacing: -0.045em;
-  font-size: clamp(3.8rem, 14vw, 11.5rem);
+  font-size: clamp(3.4rem, 8vw, 6.5rem);
 }
 .hero__tag {
   margin-top: 1.1rem;
-  color: var(--red-deep);
+  color: var(--cream);
+  opacity: 0.85;
   font-family: var(--font-accent);
   font-size: clamp(1.15rem, 2.4vw, 1.55rem);
   font-weight: 500;
@@ -506,53 +440,6 @@ section {
 }
 .hero__cta {
   margin-top: clamp(1.75rem, 4vw, 2.75rem);
-}
-.hero__scrollCue {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(1.5rem, 5vh, 3rem);
-  z-index: 2;
-  width: 26px;
-  height: 42px;
-  border: 2px solid var(--red-deep);
-  border-radius: 999px;
-  opacity: 0.6;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-.hero__scrollCue span {
-  position: absolute;
-  top: 7px;
-  left: 50%;
-  width: 4px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--red-deep);
-  transform: translateX(-50%);
-  animation: scrollCueDrift 1.8s ease-in-out infinite;
-}
-@keyframes scrollCueDrift {
-  0% {
-    transform: translate(-50%, 0);
-    opacity: 1;
-  }
-  70% {
-    opacity: 0.3;
-  }
-  100% {
-    transform: translate(-50%, 14px);
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .hero__scrollCue span {
-    animation: none;
-  }
-}
-@media (max-width: 780px) {
-  .hero__scrollCue {
-    display: none; /* the hero is already tight on mobile; skip the cue */
-  }
 }
 
 /* ============================================================
@@ -1157,6 +1044,14 @@ section {
    Responsive
    ============================================================ */
 @media (max-width: 780px) {
+  .hero__inner {
+    grid-template-columns: 1fr;
+  }
+  .hero__art .scene-stage {
+    width: 100%;
+    height: 80vw;
+    aspect-ratio: auto;
+  }
   .about__grid {
     grid-template-columns: 1fr;
   }
