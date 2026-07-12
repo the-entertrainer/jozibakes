@@ -3,9 +3,10 @@ import ScrollScene from './ScrollScene';
 import PhotoCarousel from './PhotoCarousel';
 import Reveal from './Reveal';
 import ScrollProgress from './ScrollProgress';
-import MagneticLink from './MagneticLink';
+import OrderButton from './OrderButton';
 import EntranceGate from './EntranceGate';
 import Accordion from './Accordion';
+import { CATEGORY_BY_ID } from './menu';
 
 const HERO_SCENE =
   'https://prod.spline.design/Le2iIYYasafjz8Ib/scene.splinecode';
@@ -18,23 +19,10 @@ const COOKIES_SCENE =
 const LOAF_CAKES_SCENE =
   'https://prod.spline.design/XHTySNkj3qMwFQ1u/scene.splinecode';
 
-const LOREM =
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel lacus et est varius malesuada. Nullam tincidunt, libero at suscipit lacinia, justo odio convallis turpis, id tempus mauris lorem nec velit. Integer sit amet justo at nisl convallis consequat a a augue. Phasellus convallis, arcu nec cursus ultrices, turpis felis lacinia arcu, non posuere est urna quis purus. Donec vel magna ut dui facilisis vehicula. Curabitur euismod, ex nec facilisis facilisis, velit quam tincidunt est, eu tincidunt velit libero a nulla. Nam ac lacus sit amet libero facilisis dapibus a id tortor.';
-
-// Placeholder detail-panel copy — swap for real ingredient/allergen/menu
-// info before launch. Left generic on purpose rather than invented.
-const DETAIL_ITEMS = [
-  {
-    title: "What's inside",
-    content:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel lacus et est varius malesuada nullam tincidunt.',
-  },
-  {
-    title: 'Good to know',
-    content:
-      'Integer sit amet justo at nisl convallis consequat, phasellus convallis arcu nec cursus ultrices turpis felis.',
-  },
-];
+const TREATS = CATEGORY_BY_ID.treats;
+const BREADS = CATEGORY_BY_ID.breads;
+const COOKIES = CATEGORY_BY_ID.cookies;
+const LOAF = CATEGORY_BY_ID.loaf;
 
 function SectionNum({ n }: { n: string }) {
   return (
@@ -72,9 +60,7 @@ export default function Home() {
       <nav className="nav">
         <div className="wrap nav__inner">
           <span className="nav__brand">Jozi Bakes</span>
-          <a className="nav__cta" href="#contact">
-            Order Now
-          </a>
+          <OrderButton className="nav__cta">Order Now</OrderButton>
         </div>
       </nav>
 
@@ -98,9 +84,7 @@ export default function Home() {
               &ldquo;Artisanal bakery in Kharghar.&rdquo;
             </Reveal>
             <Reveal variant="up" delay={280} className="hero__cta">
-              <MagneticLink className="btn btn--light" href="#contact">
-                Order Now
-              </MagneticLink>
+              <OrderButton className="btn btn--light">Order Now</OrderButton>
             </Reveal>
           </div>
           <div className="hero__art">
@@ -193,15 +177,15 @@ export default function Home() {
               Sweet Treats
             </Reveal>
             <Reveal as="p" variant="up" delay={100} className="product__copy">
-              {LOREM}
+              {TREATS.tagline}
             </Reveal>
             <Reveal variant="up" delay={160}>
-              <Accordion items={DETAIL_ITEMS} />
+              <Accordion items={TREATS.details} />
             </Reveal>
             <Reveal variant="up" delay={240} className="product__cta">
-              <MagneticLink className="btn btn--light" href="#contact">
+              <OrderButton category="treats" className="btn btn--light">
                 Order Now
-              </MagneticLink>
+              </OrderButton>
             </Reveal>
           </div>
         </div>
@@ -219,15 +203,15 @@ export default function Home() {
               Breads
             </Reveal>
             <Reveal as="p" variant="up" delay={100} className="product__copy">
-              {LOREM}
+              {BREADS.tagline}
             </Reveal>
             <Reveal variant="up" delay={160}>
-              <Accordion items={DETAIL_ITEMS} />
+              <Accordion items={BREADS.details} />
             </Reveal>
             <Reveal variant="up" delay={240} className="product__cta">
-              <MagneticLink className="btn btn--red" href="#contact">
+              <OrderButton category="breads" className="btn btn--red">
                 Order Now
-              </MagneticLink>
+              </OrderButton>
             </Reveal>
           </div>
           <div className="product__art">
@@ -261,15 +245,15 @@ export default function Home() {
               Cookies
             </Reveal>
             <Reveal as="p" variant="up" delay={100} className="product__copy">
-              {LOREM}
+              {COOKIES.tagline}
             </Reveal>
             <Reveal variant="up" delay={160}>
-              <Accordion items={DETAIL_ITEMS} />
+              <Accordion items={COOKIES.details} />
             </Reveal>
             <Reveal variant="up" delay={240} className="product__cta">
-              <MagneticLink className="btn btn--light" href="#contact">
+              <OrderButton category="cookies" className="btn btn--light">
                 Order Now
-              </MagneticLink>
+              </OrderButton>
             </Reveal>
           </div>
         </div>
@@ -287,15 +271,15 @@ export default function Home() {
               Loaf Cakes
             </Reveal>
             <Reveal as="p" variant="up" delay={100} className="product__copy">
-              {LOREM}
+              {LOAF.tagline}
             </Reveal>
             <Reveal variant="up" delay={160}>
-              <Accordion items={DETAIL_ITEMS} />
+              <Accordion items={LOAF.details} />
             </Reveal>
             <Reveal variant="up" delay={240} className="product__cta">
-              <MagneticLink className="btn btn--red" href="#contact">
+              <OrderButton category="loaf" className="btn btn--red">
                 Order Now
-              </MagneticLink>
+              </OrderButton>
             </Reveal>
           </div>
           <div className="product__art">
@@ -341,19 +325,19 @@ export default function Home() {
             </div>
             <Reveal variant="up" delay={100} className="contact__details">
               <div>
-                <div className="contact__label">Phone</div>
-                <a className="contact__value" href="tel:1234567890">
-                  123-456-7890
+                <div className="contact__label">WhatsApp</div>
+                <a
+                  className="contact__value"
+                  href="https://wa.me/919603542595"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  +91 96035 42595
                 </a>
               </div>
               <div>
-                <div className="contact__label">Email</div>
-                <a
-                  className="contact__value"
-                  href="mailto:hello@reallygreatsite.com"
-                >
-                  hello@reallygreatsite.com
-                </a>
+                <div className="contact__label">Find us</div>
+                <span className="contact__value">Kharghar, Navi Mumbai</span>
               </div>
             </Reveal>
           </div>
