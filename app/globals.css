@@ -542,8 +542,12 @@ section {
   border-radius: 0;
   object-fit: cover;
 }
-/* Keeps the title area legible over whatever the scene renders up top,
-   while leaving the lower half (where the diorama sits) clear. */
+/* Brand-red scrim between the scene and the copy. The Spline camera is
+   live — zoom or scroll can park bright geometry right behind the tagline
+   and buttons — so the wash has to cover the whole text/CTA zone at all
+   times, not just the title. Many close-together stops approximate an
+   eased curve, so it melts into the diorama with no visible edge instead
+   of cutting off, and the lowest quarter stays clear for the scene. */
 .hero::after {
   content: '';
   position: absolute;
@@ -552,8 +556,12 @@ section {
   background: linear-gradient(
     to bottom,
     var(--red) 0%,
-    rgba(151, 25, 29, 0.5) 20%,
-    rgba(151, 25, 29, 0) 46%
+    rgba(151, 25, 29, 0.88) 16%,
+    rgba(151, 25, 29, 0.7) 30%,
+    rgba(151, 25, 29, 0.5) 44%,
+    rgba(151, 25, 29, 0.3) 56%,
+    rgba(151, 25, 29, 0.14) 66%,
+    rgba(151, 25, 29, 0) 78%
   );
   pointer-events: none;
 }
