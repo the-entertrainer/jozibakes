@@ -56,7 +56,7 @@ export default function Home() {
               <Link href="/menu" className="btn btn--light">
                 Order Now
               </Link>
-              <Link href="/gallery" className="btn btn--ghost hero__gallery">
+              <Link href="/gallery" className="btn btn--teal hero__gallery">
                 <GalleryIcon />
                 Made with love
               </Link>
