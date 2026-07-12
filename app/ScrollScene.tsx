@@ -27,6 +27,10 @@ const Spline = dynamic(() => import('./SplineLazy'), { ssr: false });
  * `fallbackSrc` is shown — in place of the 3D model, gracefully — if the
  * scene fails to load (dropped request, Spline outage, etc.), which is a
  * real risk on the flaky/metered mobile connections this site is built for.
+ *
+ * `disabled` skips Spline entirely — no mount, no network request, just
+ * the fallback image from the start. Used to isolate one scene at a time
+ * while validating new Spline exports one by one.
  */
 export default function ScrollScene({
   scene,
@@ -37,6 +41,7 @@ export default function ScrollScene({
   fallbackSrc,
   fallbackAlt = '',
   fallbackMode = 'card',
+  disabled = false,
 }: {
   scene: string;
   sizePct?: number;
@@ -46,12 +51,13 @@ export default function ScrollScene({
   fallbackSrc: string;
   fallbackAlt?: string;
   fallbackMode?: 'float' | 'card';
+  disabled?: boolean;
 }) {
   const stage = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
   const [mount, setMount] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState(disabled);
 
   // Lazy-mount the runtime near the viewport, and unmount it again once the
   // section is well out of view. Each mounted scene is its own WebGL
@@ -62,6 +68,7 @@ export default function ScrollScene({
   // and remounting is a clean, harmless reset — worst case a returning
   // visitor sees the loading shimmer again for a moment.
   useEffect(() => {
+    if (disabled) return; // never mounts Spline, so nothing to observe
     const el = stage.current;
     if (!el) return;
     const io = new IntersectionObserver(
@@ -77,7 +84,7 @@ export default function ScrollScene({
     );
     io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [disabled]);
 
   // Static placement — computed once and on resize, no scroll animation.
   useEffect(() => {

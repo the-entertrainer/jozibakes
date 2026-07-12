@@ -238,6 +238,7 @@ export default function Home() {
               fallbackSrc="/images/bun.webp"
               fallbackAlt="Freshly baked milk buns"
               fallbackMode="float"
+              disabled
             />
           </div>
         </div>
@@ -257,6 +258,7 @@ export default function Home() {
               fallbackSrc="/images/gallery-cookie.webp"
               fallbackAlt="Chocolate-drizzled cookies"
               fallbackMode="card"
+              disabled
             />
           </div>
           <div className="product__text">
@@ -314,6 +316,7 @@ export default function Home() {
               fallbackSrc="/images/gallery-babka.webp"
               fallbackAlt="Caramel babka loaf cake"
               fallbackMode="card"
+              disabled
             />
           </div>
         </div>
