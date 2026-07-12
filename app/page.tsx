@@ -230,7 +230,6 @@ export default function Home() {
               fallbackSrc="/images/bun.webp"
               fallbackAlt="Freshly baked milk buns"
               fallbackMode="float"
-              disabled
             />
           </div>
         </div>
