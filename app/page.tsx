@@ -64,10 +64,17 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero — contained, max-width like every other section; the shop
-          diorama sits as a visual artifact rather than a fullscreen,
-          scroll-pinned background */}
+      {/* Hero — the shop diorama as a full-bleed backdrop, matched to the
+          section's corners, with the title / tagline / CTA sitting over it */}
       <section className="hero">
+        <div className="hero__art">
+          <ScrollScene
+            scene={HERO_SCENE}
+            fallbackSrc="/images/storefront.webp"
+            fallbackAlt="The Jozi Bakes storefront with Jozi and Bruno"
+            fallbackMode="card"
+          />
+        </div>
         <div className="wrap hero__inner">
           <div className="hero__text">
             <Reveal as="h1" variant="clip" className="hero__title">
@@ -75,25 +82,12 @@ export default function Home() {
               <br />
               Bakes
             </Reveal>
-            <Reveal
-              as="p"
-              variant="up"
-              delay={150}
-              className="hero__tag"
-            >
+            <Reveal as="p" variant="up" delay={150} className="hero__tag">
               &ldquo;Artisanal bakery in Kharghar.&rdquo;
             </Reveal>
             <Reveal variant="up" delay={280} className="hero__cta">
               <OrderButton className="btn btn--light">Order Now</OrderButton>
             </Reveal>
-          </div>
-          <div className="hero__art">
-            <ScrollScene
-              scene={HERO_SCENE}
-              fallbackSrc="/images/storefront.webp"
-              fallbackAlt="The Jozi Bakes storefront with Jozi and Bruno"
-              fallbackMode="card"
-            />
           </div>
         </div>
       </section>

@@ -407,37 +407,76 @@ section {
 }
 
 /* ============================================================
-   Hero — contained like every other section (no fullscreen pin).
-   The shop diorama sits in .hero__art as a visual artifact, sized
-   by .scene-stage the same way the product scenes are; Spline's own
-   React export fills it natively with no scale/offset math on our end.
+   Hero — the shop diorama as a full-bleed backdrop. The Spline
+   viewport fills the section corner to corner (.hero__art is pinned
+   to the hero's box) and the title / tagline / CTA sit directly over
+   it. Not fullscreen or scroll-pinned — just a normal-height section
+   whose background happens to be the live 3D scene.
    ============================================================ */
 .hero {
   position: relative;
+  overflow: hidden;
   background: var(--red);
   color: var(--cream);
-  padding-block: clamp(5.5rem, 16vw, 9rem) clamp(4.5rem, 12vw, 8rem);
+  min-height: 90vh; /* fallback for browsers without svh */
+  min-height: clamp(600px, 92svh, 940px);
+  display: flex;
+  align-items: flex-start;
+}
+/* The scene fills the whole hero box, exactly matching its corners. */
+.hero__art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.hero__art .scene-stage {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  animation: none; /* no scroll-in scale/tilt on a background */
+}
+/* Fallback still fills the hero too, rather than sitting as a centered card. */
+.hero__art .scene-fallback {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+  border-radius: 0;
+  object-fit: cover;
+}
+/* Keeps the title area legible over whatever the scene renders up top,
+   while leaving the lower half (where the diorama sits) clear. */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    to bottom,
+    var(--red) 0%,
+    rgba(151, 25, 29, 0.5) 20%,
+    rgba(151, 25, 29, 0) 46%
+  );
+  pointer-events: none;
 }
 .hero__inner {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  align-items: center;
-  gap: clamp(1.5rem, 4vw, 3rem);
-}
-.hero__art {
-  filter: drop-shadow(0 25px 40px rgba(0, 0, 0, 0.3));
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding-top: clamp(2rem, 8vh, 5rem);
 }
 .hero__title {
   color: var(--cream);
   font-weight: 800;
   line-height: 0.84;
   letter-spacing: -0.045em;
-  font-size: clamp(3.4rem, 8vw, 6.5rem);
+  font-size: clamp(3.8rem, 12vw, 8rem);
 }
 .hero__tag {
   margin-top: 1.1rem;
   color: var(--cream);
-  opacity: 0.85;
+  opacity: 0.9;
   font-family: var(--font-accent);
   font-size: clamp(1.15rem, 2.4vw, 1.55rem);
   font-weight: 500;
@@ -1599,14 +1638,6 @@ section {
   }
 }
 @media (max-width: 780px) {
-  .hero__inner {
-    grid-template-columns: 1fr;
-  }
-  .hero__art .scene-stage {
-    width: 100%;
-    height: 80vw;
-    aspect-ratio: auto;
-  }
   .about__grid {
     grid-template-columns: 1fr;
   }
