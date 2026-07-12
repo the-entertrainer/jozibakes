@@ -174,10 +174,6 @@ export default function Home() {
           <div className="product__art">
             <ScrollScene
               scene={SWEET_TREATS_SCENE}
-              sizePct={330}
-              offsetXPct={44}
-              offsetYPct={-22}
-              mobileOffsetYPct={12}
               fallbackSrc="/images/donut.webp"
               fallbackAlt="Chocolate-drizzled donut"
               fallbackMode="float"
@@ -231,10 +227,6 @@ export default function Home() {
           <div className="product__art">
             <ScrollScene
               scene={BREADS_SCENE}
-              sizePct={330}
-              offsetXPct={-44}
-              offsetYPct={-22}
-              mobileOffsetYPct={12}
               fallbackSrc="/images/bun.webp"
               fallbackAlt="Freshly baked milk buns"
               fallbackMode="float"
@@ -251,10 +243,6 @@ export default function Home() {
           <div className="product__art">
             <ScrollScene
               scene={COOKIES_SCENE}
-              sizePct={300}
-              offsetXPct={40}
-              offsetYPct={-12}
-              mobileOffsetYPct={14}
               fallbackSrc="/images/gallery-cookie.webp"
               fallbackAlt="Chocolate-drizzled cookies"
               fallbackMode="card"
@@ -309,10 +297,6 @@ export default function Home() {
           <div className="product__art">
             <ScrollScene
               scene={LOAF_CAKES_SCENE}
-              sizePct={240}
-              offsetXPct={-22}
-              offsetYPct={-10}
-              mobileOffsetYPct={12}
               fallbackSrc="/images/gallery-babka.webp"
               fallbackAlt="Caramel babka loaf cake"
               fallbackMode="card"

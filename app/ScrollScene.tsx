@@ -14,15 +14,12 @@ import SplineBoundary from './SplineBoundary';
 const Spline = dynamic(() => import('./SplineLazy'), { ssr: false });
 
 /**
- * Places a Spline object in its section.
- *
- * This component only mounts, sizes and positions the scene — all motion is
- * authored inside Spline itself. It lazy-mounts the runtime near the viewport
- * and fades the scene in once it's ready.
- *
- * `sizePct` scales the canvas relative to its stage (rendered crisp, not
- * upscaled); `offsetXPct` / `offsetYPct` nudge the model so it overlaps
- * neighbouring copy on desktop, `mobileOffsetYPct` does the same on mobile.
+ * Mounts a Spline scene, filling its stage exactly the way Spline's own
+ * React export is designed to: the component measures its container (via
+ * its built-in ParentSize sizing) and renders at 100% of it — no external
+ * scale/offset math on our end. `.scene-stage` decides how much space the
+ * embed occupies on the page (an ordinary layout decision); everything
+ * inside that box is exactly what was authored in Spline.
  *
  * `fallbackSrc` is shown — in place of the 3D model, gracefully — if the
  * scene fails to load (dropped request, Spline outage, etc.), which is a
@@ -34,39 +31,30 @@ const Spline = dynamic(() => import('./SplineLazy'), { ssr: false });
  */
 export default function ScrollScene({
   scene,
-  sizePct = 200,
-  offsetXPct = 0,
-  offsetYPct = 0,
-  mobileOffsetYPct = 0,
   fallbackSrc,
   fallbackAlt = '',
   fallbackMode = 'card',
   disabled = false,
 }: {
   scene: string;
-  sizePct?: number;
-  offsetXPct?: number;
-  offsetYPct?: number;
-  mobileOffsetYPct?: number;
   fallbackSrc: string;
   fallbackAlt?: string;
   fallbackMode?: 'float' | 'card';
   disabled?: boolean;
 }) {
   const stage = useRef<HTMLDivElement>(null);
-  const inner = useRef<HTMLDivElement>(null);
   const [mount, setMount] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(disabled);
 
   // Lazy-mount the runtime near the viewport, and unmount it again once the
   // section is well out of view. Each mounted scene is its own WebGL
-  // context — with 4 of these on the page, letting them all accumulate as
-  // the user scrolls past is unnecessary GPU/battery load on phones, which
-  // is most of our traffic. The motion inside each scene is self-contained
-  // (not driven by page scroll position, unlike the hero), so unmounting
-  // and remounting is a clean, harmless reset — worst case a returning
-  // visitor sees the loading shimmer again for a moment.
+  // context — with several of these on the page, letting them all
+  // accumulate as the user scrolls past is unnecessary GPU/battery load on
+  // phones, which is most of our traffic. The motion inside each scene is
+  // self-contained (not driven by page scroll position, unlike the hero),
+  // so unmounting and remounting is a clean, harmless reset — worst case a
+  // returning visitor sees the loading shimmer again for a moment.
   useEffect(() => {
     if (disabled) return; // never mounts Spline, so nothing to observe
     const el = stage.current;
@@ -86,40 +74,21 @@ export default function ScrollScene({
     return () => io.disconnect();
   }, [disabled]);
 
-  // Static placement — computed once and on resize, no scroll animation.
-  useEffect(() => {
-    const place = () => {
-      const el = stage.current;
-      const box = inner.current;
-      if (!el || !box) return;
-      const r = el.getBoundingClientRect();
-      const isMobile = window.innerWidth <= 780;
-      const ox = isMobile ? 0 : (offsetXPct / 100) * r.width;
-      const oyPct = isMobile ? mobileOffsetYPct : offsetYPct;
-      const oy = (oyPct / 100) * r.height;
-      box.style.transform = `translate(calc(-50% + ${ox}px), calc(-50% + ${oy}px))`;
-    };
-    place();
-    window.addEventListener('resize', place);
-    return () => window.removeEventListener('resize', place);
-  }, [offsetXPct, offsetYPct, mobileOffsetYPct, loaded]);
-
   return (
     <div ref={stage} className="scene-stage">
       {mount && !loaded && !failed && (
         <div className="scene-loading" aria-hidden="true" />
       )}
-      <div
-        ref={inner}
-        className="scene-inner"
-        style={{ opacity: loaded ? 1 : 0, ['--size' as string]: `${sizePct}%` }}
-      >
-        {mount && !failed && (
-          <SplineBoundary onError={() => setFailed(true)}>
-            <Spline scene={scene} onLoad={() => setLoaded(true)} />
-          </SplineBoundary>
-        )}
-      </div>
+      {mount && !failed && (
+        <SplineBoundary onError={() => setFailed(true)}>
+          <Spline
+            scene={scene}
+            onLoad={() => setLoaded(true)}
+            className="scene-canvas"
+            style={{ opacity: loaded ? 1 : 0 }}
+          />
+        </SplineBoundary>
+      )}
       {failed && (
         <img
           src={fallbackSrc}

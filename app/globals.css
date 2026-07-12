@@ -445,14 +445,11 @@ section {
   /* height intentionally left to the Spline runtime (scroll length) */
 }
 /* Static fallback hero — a rendered still of the same shop diorama, shown
-   if the Spline scene itself fails to load. Compound selector so it beats
-   the mobile `.heroScene` landscape-composition override below regardless
-   of source order. */
+   if the Spline scene itself fails to load. */
 .heroScene.heroScene--fallback {
   position: absolute;
   inset: 0;
   width: 100%;
-  margin-left: 0;
 }
 .heroScene__fallbackImg {
   width: 100%;
@@ -878,25 +875,24 @@ section {
   width: 100%;
 }
 
-/* Scroll-driven Spline stage. The inner canvas is rendered at 2× the stage
-   so the model stays crisp without CSS upscaling; it's centred and can
-   overflow the stage harmlessly (transparent, non-interactive). */
+/* Scroll-driven Spline stage. `.scene-stage` is the only sizing decision on
+   our end (how much page real estate this embed gets); `.scene-canvas` just
+   fills it edge to edge, letting Spline's own React export (and its
+   built-in ParentSize measuring) render exactly as authored — no scale or
+   offset math layered on top. */
 .scene-stage {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
 }
-.scene-inner {
+.scene-canvas {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: var(--size, 200%);
-  height: var(--size, 200%);
-  transform: translate(-50%, -50%);
-  pointer-events: none;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   transition: opacity 0.6s ease; /* gentle fade-in once the scene loads */
 }
-.scene-inner canvas {
+.scene-canvas canvas {
   display: block;
   width: 100% !important;
   height: 100% !important;
@@ -907,8 +903,8 @@ section {
    statically there. Pure CSS scroll-driven animation (animation-timeline:
    view()): it runs on the compositor with zero JS involvement, so it can't
    reintroduce the main-thread jank the showreel had. `.scene-stage` has no
-   other transform on it, so this can't conflict with ScrollScene's own
-   placement logic on its child `.scene-inner`. Browsers without support
+   other transform on it, so this can't conflict with anything else.
+   Browsers without support
    (Firefox, older Safari) just show the scene at rest — no fallback code
    needed, the animation simply doesn't apply.  */
 @supports (animation-timeline: view()) {
@@ -1161,13 +1157,6 @@ section {
    Responsive
    ============================================================ */
 @media (max-width: 780px) {
-  /* The hero scene's camera is composed for landscape; render the canvas at
-     a landscape width and slide it so the shop sits centred — the hero's
-     overflow:hidden clips the excess and the page never scrolls sideways. */
-  .heroScene {
-    width: 260vw;
-    margin-left: -66vw;
-  }
   .about__grid {
     grid-template-columns: 1fr;
   }
