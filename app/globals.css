@@ -56,6 +56,83 @@ a {
 }
 
 /* ============================================================
+   Entrance gate — a brief ceremonial curtain on first paint
+   ============================================================ */
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  background: var(--red);
+  color: var(--cream);
+  cursor: pointer;
+  transition: opacity 0.6s var(--ease-cinematic), transform 0.6s var(--ease-cinematic);
+}
+.gate--leaving {
+  opacity: 0;
+  transform: translateY(-4%);
+  pointer-events: none;
+}
+.gate__brand {
+  font-family: var(--font);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-size: clamp(2rem, 7vw, 3.5rem);
+}
+.gate__bar {
+  width: min(220px, 60vw);
+  height: 2px;
+  background: rgba(242, 226, 196, 0.25);
+  overflow: hidden;
+}
+.gate__fill {
+  height: 100%;
+  width: 100%;
+  transform-origin: left;
+  transform: scaleX(0);
+  background: var(--cream);
+}
+.gate__fill--animate {
+  animation: gateFill 1.3s linear forwards;
+}
+@keyframes gateFill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.gate__hint {
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  animation: gateHintPulse 2s ease-in-out infinite;
+}
+@keyframes gateHintPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gate__fill--animate {
+    animation-duration: 0.15s;
+  }
+  .gate__hint {
+    animation: none;
+  }
+}
+
+/* ============================================================
    Layout helpers
    ============================================================ */
 .wrap {
@@ -709,6 +786,90 @@ section {
 }
 .product__cta {
   margin-top: clamp(1.75rem, 4vw, 2.5rem);
+}
+
+/* Expandable detail panels — always reads left-to-right regardless of the
+   ambient text-align on red (right-aligned) product sections. */
+.accordion {
+  margin-top: clamp(1.5rem, 4vw, 2.25rem);
+  max-width: 46ch;
+  text-align: left;
+  border-top: 1px solid currentColor;
+  opacity: 0.92;
+}
+.product--treats .accordion,
+.product--cookies .accordion {
+  margin-left: auto;
+}
+.accordion__item {
+  border-bottom: 1px solid currentColor;
+}
+.accordion__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.9em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  font-weight: 700;
+  font-size: clamp(0.92rem, 1.2vw, 1.02rem);
+  text-align: left;
+}
+.accordion__icon {
+  position: relative;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+.accordion__icon::before,
+.accordion__icon::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+  transition: transform 0.3s var(--ease-cinematic), opacity 0.3s var(--ease-cinematic);
+}
+.accordion__icon::before {
+  width: 100%;
+  height: 2px;
+}
+.accordion__icon::after {
+  width: 2px;
+  height: 100%;
+}
+.accordion__item.is-open .accordion__icon::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+  opacity: 0;
+}
+.accordion__panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s var(--ease-cinematic);
+}
+.accordion__item.is-open .accordion__panel {
+  grid-template-rows: 1fr;
+}
+.accordion__panelInner {
+  overflow: hidden;
+}
+.accordion__panelInner p {
+  padding-bottom: 1em;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+@media (prefers-reduced-motion: reduce) {
+  .accordion__panel,
+  .accordion__icon::before,
+  .accordion__icon::after {
+    transition: none;
+  }
 }
 .product__art {
   filter: drop-shadow(0 25px 40px rgba(0, 0, 0, 0.25));

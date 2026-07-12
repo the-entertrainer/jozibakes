@@ -5,6 +5,8 @@ import HeroScene from './HeroScene';
 import Reveal from './Reveal';
 import ScrollProgress from './ScrollProgress';
 import MagneticLink from './MagneticLink';
+import EntranceGate from './EntranceGate';
+import Accordion from './Accordion';
 
 const SWEET_TREATS_SCENE =
   'https://prod.spline.design/XLyPwbheYwHrlx28/scene.splinecode';
@@ -17,6 +19,21 @@ const LOAF_CAKES_SCENE =
 
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel lacus et est varius malesuada. Nullam tincidunt, libero at suscipit lacinia, justo odio convallis turpis, id tempus mauris lorem nec velit. Integer sit amet justo at nisl convallis consequat a a augue. Phasellus convallis, arcu nec cursus ultrices, turpis felis lacinia arcu, non posuere est urna quis purus. Donec vel magna ut dui facilisis vehicula. Curabitur euismod, ex nec facilisis facilisis, velit quam tincidunt est, eu tincidunt velit libero a nulla. Nam ac lacus sit amet libero facilisis dapibus a id tortor.';
+
+// Placeholder detail-panel copy — swap for real ingredient/allergen/menu
+// info before launch. Left generic on purpose rather than invented.
+const DETAIL_ITEMS = [
+  {
+    title: "What's inside",
+    content:
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent vel lacus et est varius malesuada nullam tincidunt.',
+  },
+  {
+    title: 'Good to know',
+    content:
+      'Integer sit amet justo at nisl convallis consequat, phasellus convallis arcu nec cursus ultrices turpis felis.',
+  },
+];
 
 function SectionNum({ n }: { n: string }) {
   return (
@@ -47,6 +64,7 @@ function InstagramIcon() {
 export default function Home() {
   return (
     <main>
+      <EntranceGate />
       <ScrollProgress />
 
       {/* Navigation */}
@@ -175,7 +193,10 @@ export default function Home() {
             <Reveal as="p" variant="up" delay={100} className="product__copy">
               {LOREM}
             </Reveal>
-            <Reveal variant="up" delay={200} className="product__cta">
+            <Reveal variant="up" delay={160}>
+              <Accordion items={DETAIL_ITEMS} />
+            </Reveal>
+            <Reveal variant="up" delay={240} className="product__cta">
               <MagneticLink className="btn btn--light" href="#contact">
                 Order Now
               </MagneticLink>
@@ -198,7 +219,10 @@ export default function Home() {
             <Reveal as="p" variant="up" delay={100} className="product__copy">
               {LOREM}
             </Reveal>
-            <Reveal variant="up" delay={200} className="product__cta">
+            <Reveal variant="up" delay={160}>
+              <Accordion items={DETAIL_ITEMS} />
+            </Reveal>
+            <Reveal variant="up" delay={240} className="product__cta">
               <MagneticLink className="btn btn--red" href="#contact">
                 Order Now
               </MagneticLink>
@@ -245,7 +269,10 @@ export default function Home() {
             <Reveal as="p" variant="up" delay={100} className="product__copy">
               {LOREM}
             </Reveal>
-            <Reveal variant="up" delay={200} className="product__cta">
+            <Reveal variant="up" delay={160}>
+              <Accordion items={DETAIL_ITEMS} />
+            </Reveal>
+            <Reveal variant="up" delay={240} className="product__cta">
               <MagneticLink className="btn btn--light" href="#contact">
                 Order Now
               </MagneticLink>
@@ -268,7 +295,10 @@ export default function Home() {
             <Reveal as="p" variant="up" delay={100} className="product__copy">
               {LOREM}
             </Reveal>
-            <Reveal variant="up" delay={200} className="product__cta">
+            <Reveal variant="up" delay={160}>
+              <Accordion items={DETAIL_ITEMS} />
+            </Reveal>
+            <Reveal variant="up" delay={240} className="product__cta">
               <MagneticLink className="btn btn--red" href="#contact">
                 Order Now
               </MagneticLink>
