@@ -1,8 +1,17 @@
 'use client';
 
-import Spline from '@splinetool/react-spline';
+import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
 import SplineBoundary from './SplineBoundary';
+
+// The Spline runtime is a multi-MB dependency. Importing it statically would
+// pull it into this page's core JS bundle — downloaded by every visitor on
+// page load, even ones who never scroll far enough to see one of these
+// scenes. Loading it via next/dynamic means the chunk is only fetched the
+// moment this component actually renders a <Spline>, which — because that's
+// itself gated behind the `mount` IntersectionObserver below — only happens
+// once the section is genuinely about to come into view.
+const Spline = dynamic(() => import('./SplineLazy'), { ssr: false });
 
 /**
  * Places a Spline object in its section.

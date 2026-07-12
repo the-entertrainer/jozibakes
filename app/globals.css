@@ -409,6 +409,8 @@ section {
 .about__visual {
   position: relative;
   max-width: 400px;
+  /* the photo is now a fill-mode next/image — it needs its box sized here */
+  aspect-ratio: 3 / 4;
 }
 .about__visualShape {
   position: absolute;
@@ -418,11 +420,8 @@ section {
   z-index: 0;
 }
 .about__photo {
-  position: relative;
+  /* fill-mode next/image sets position/inset/width/height itself */
   z-index: 1;
-  display: block;
-  width: 100%;
-  aspect-ratio: 3 / 4;
   object-fit: cover;
   border-radius: 20px;
   box-shadow: 0 30px 55px -20px rgba(140, 36, 29, 0.45);
@@ -719,6 +718,7 @@ section {
    Contact — storefront band + "Meet Jozi & Bruno"
    ============================================================ */
 .storefront {
+  position: relative;
   width: 100%;
   aspect-ratio: 16 / 7;
   max-height: 66vh;

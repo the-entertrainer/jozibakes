@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import ScrollScene from './ScrollScene';
 import PhotoCarousel from './PhotoCarousel';
 import HeroScene from './HeroScene';
@@ -89,10 +90,12 @@ export default function Home() {
           <div className="about__grid">
             <Reveal variant="scale" className="about__visual">
               <div className="about__visualShape" aria-hidden="true" />
-              <img
+              <Image
                 src="/images/gallery-babka.webp"
                 alt="Fresh caramel babka loaf from Jozi Bakes"
                 className="about__photo"
+                fill
+                sizes="(max-width: 780px) 320px, 400px"
               />
               <span className="about__badge">Small batches</span>
             </Reveal>
@@ -272,9 +275,11 @@ export default function Home() {
       {/* Contact */}
       <section id="contact">
         <div className="storefront">
-          <img
+          <Image
             src="/images/storefront.webp"
             alt="The Jozi Bakes storefront with Jozi and Bruno"
+            fill
+            sizes="100vw"
           />
         </div>
         <div className="contact grain">

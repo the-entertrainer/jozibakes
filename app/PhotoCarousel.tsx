@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useRef } from 'react';
 
 /**
@@ -10,12 +11,37 @@ import { useEffect, useRef } from 'react';
  *   • auto-scrolls on its own,
  *   • shifts with the page's vertical scroll,
  *   • and can be flicked/swiped left and right (with momentum).
+ *
+ * Each photo's real pixel dimensions are given to next/image so it can
+ * generate a correctly-scaled srcset — CSS still governs the rendered
+ * size (`height: 100%; width: auto`), preserving each photo's own aspect
+ * ratio at a fixed ribbon height.
  */
 const PHOTOS = [
-  { src: '/images/rolls.webp', alt: 'Freshly baked golden dinner rolls' },
-  { src: '/images/gallery-babka.webp', alt: 'Caramel babka loaf' },
-  { src: '/images/gallery-cookie.webp', alt: 'Chocolate-drizzled cookies' },
-  { src: '/images/gallery-bread.webp', alt: 'Sliced artisan ciabatta bread' },
+  {
+    src: '/images/rolls.webp',
+    alt: 'Freshly baked golden dinner rolls',
+    width: 896,
+    height: 1195,
+  },
+  {
+    src: '/images/gallery-babka.webp',
+    alt: 'Caramel babka loaf',
+    width: 600,
+    height: 800,
+  },
+  {
+    src: '/images/gallery-cookie.webp',
+    alt: 'Chocolate-drizzled cookies',
+    width: 800,
+    height: 600,
+  },
+  {
+    src: '/images/gallery-bread.webp',
+    alt: 'Sliced artisan ciabatta bread',
+    width: 600,
+    height: 800,
+  },
 ];
 
 const SETS = 3;
@@ -165,10 +191,11 @@ export default function PhotoCarousel() {
           <ShowreelBubble key={`b-${s}`} />,
           ...PHOTOS.map((p, i) => (
             <div className="reel__item" key={`p-${s}-${i}`}>
-              <img
+              <Image
                 src={p.src}
                 alt={s === 0 ? p.alt : ''}
-                loading="lazy"
+                width={p.width}
+                height={p.height}
                 draggable={false}
               />
             </div>

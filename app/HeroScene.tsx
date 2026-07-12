@@ -1,8 +1,13 @@
 'use client';
 
-import Spline from '@splinetool/react-spline';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import SplineBoundary from './SplineBoundary';
+
+// Same rationale as ScrollScene: keep the multi-MB Spline runtime out of
+// this page's core JS bundle so it's fetched as its own chunk in parallel
+// with (not as a blocker to) the rest of the page becoming interactive.
+const Spline = dynamic(() => import('./SplineLazy'), { ssr: false });
 
 /**
  * Fullscreen hero background — the Jozi Bakes shop diorama.
