@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useCart } from './CartProvider';
 import { useOverlay } from './useOverlay';
-import { ITEM_BY_ID, buildWhatsAppLink, formatPrice } from './menu';
+import { ITEM_BY_ID, buildWhatsAppLink, formatPrice } from './menuData';
 
 /**
  * The cart. Slides in as a side panel on desktop, a bottom sheet on mobile.

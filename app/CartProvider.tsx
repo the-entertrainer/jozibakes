@@ -9,7 +9,7 @@ import {
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
-import { CATEGORIES, ITEM_BY_ID } from './menu';
+import { CATEGORIES, ITEM_BY_ID } from './menuData';
 import OrderMenu from './OrderMenu';
 import CartDrawer from './CartDrawer';
 import FloatingCart from './FloatingCart';

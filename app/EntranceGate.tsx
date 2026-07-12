@@ -14,15 +14,23 @@ import { useScenePreload } from './ScenePreloadProvider';
  * no matter what (a stuck/slow scene can't hold it forever), a minimum keeps
  * it from flashing away on a fast cache hit, and it's tap-anywhere-to-skip. A
  * <noscript> override means a JS-disabled visitor never gets stuck behind it.
+ *
+ * It's a once-per-session ceremony: the module-level flag below means bouncing
+ * back to home from the menu or gallery lands instantly, with no curtain replay
+ * (a full page reload starts a fresh session and shows it again).
  */
 const MIN_MS = 900; // don't flash away faster than this
 const MAX_MS = 8000; // hard cap so a stalled scene can't trap the user
 const REDUCED_MS = 200;
 const LEAVE_MS = 650; // matches the curtain's exit transition
 
+// Persists across client-side navigations within one page load (but not a
+// full reload), so the gate only greets the visitor once.
+let hasEntered = false;
+
 export default function EntranceGate() {
   const [leaving, setLeaving] = useState(false);
-  const [gone, setGone] = useState(false);
+  const [gone, setGone] = useState(hasEntered);
   const { total, ready } = useScenePreload();
   const startRef = useRef(0);
   const reduceRef = useRef(false);
@@ -31,6 +39,7 @@ export default function EntranceGate() {
   const leave = () => {
     if (leftRef.current) return;
     leftRef.current = true;
+    hasEntered = true;
     setLeaving(true);
     document.body.style.overflow = '';
     window.setTimeout(() => setGone(true), LEAVE_MS);

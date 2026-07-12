@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { useCart } from './CartProvider';
 import { useOverlay } from './useOverlay';
-import { CATEGORIES, CATEGORY_BY_ID, formatPrice } from './menu';
+import { CATEGORIES, CATEGORY_BY_ID, formatPrice } from './menuData';
 
 /**
  * The order popup. Opens focused on one category but keeps every category a
