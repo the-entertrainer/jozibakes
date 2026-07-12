@@ -91,21 +91,10 @@ a {
 }
 .gate__fill {
   height: 100%;
-  width: 100%;
-  transform-origin: left;
-  transform: scaleX(0);
+  width: 0;
   background: var(--cream);
-}
-.gate__fill--animate {
-  animation: gateFill 1.3s linear forwards;
-}
-@keyframes gateFill {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
+  /* driven by real scene-load progress from EntranceGate */
+  transition: width 0.45s var(--ease-cinematic);
 }
 .gate__hint {
   font-size: 0.72rem;
@@ -124,8 +113,8 @@ a {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .gate__fill--animate {
-    animation-duration: 0.15s;
+  .gate__fill {
+    transition-duration: 0.15s;
   }
   .gate__hint {
     animation: none;

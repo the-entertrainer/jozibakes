@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Poppins, Fraunces } from 'next/font/google';
 import './globals.css';
 import CartProvider from './CartProvider';
+import ScenePreloadProvider from './ScenePreloadProvider';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -47,7 +48,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} ${fraunces.variable}`}>
       <body>
-        <CartProvider>{children}</CartProvider>
+        <ScenePreloadProvider>
+          <CartProvider>{children}</CartProvider>
+        </ScenePreloadProvider>
       </body>
     </html>
   );

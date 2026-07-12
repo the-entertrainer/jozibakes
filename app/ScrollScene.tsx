@@ -3,31 +3,35 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
 import SplineBoundary from './SplineBoundary';
+import { useScenePreload } from './ScenePreloadProvider';
 
 // The Spline runtime is a multi-MB dependency. Importing it statically would
 // pull it into this page's core JS bundle — downloaded by every visitor on
-// page load, even ones who never scroll far enough to see one of these
-// scenes. Loading it via next/dynamic means the chunk is only fetched the
-// moment this component actually renders a <Spline>, which — because that's
-// itself gated behind the `mount` IntersectionObserver below — only happens
-// once the section is genuinely about to come into view.
+// page load. Loading it via next/dynamic keeps it in its own chunk, fetched
+// in parallel while the entrance gate is up rather than blocking first paint.
 const Spline = dynamic(() => import('./SplineLazy'), { ssr: false });
 
 /**
  * Mounts a Spline scene, filling its stage exactly the way Spline's own
- * React export is designed to: the component measures its container (via
- * its built-in ParentSize sizing) and renders at 100% of it — no external
+ * React export is designed to: the component measures its container (via its
+ * built-in ParentSize sizing) and renders at 100% of it — no external
  * scale/offset math on our end. `.scene-stage` decides how much space the
- * embed occupies on the page (an ordinary layout decision); everything
- * inside that box is exactly what was authored in Spline.
+ * embed occupies on the page; everything inside is exactly what was authored
+ * in Spline.
+ *
+ * Every scene mounts up front (not lazily on scroll) and stays mounted for
+ * the life of the page. It registers with the preloader so the entrance gate
+ * can wait for all scenes to be ready before revealing the page, and because
+ * nothing is ever unmounted, scrolling between sections is instant — no
+ * reload, no shimmer. See ScenePreloadProvider for the coordination.
  *
  * `fallbackSrc` is shown — in place of the 3D model, gracefully — if the
- * scene fails to load (dropped request, Spline outage, etc.), which is a
- * real risk on the flaky/metered mobile connections this site is built for.
+ * scene fails to load (dropped request, Spline outage, etc.), which is a real
+ * risk on the flaky/metered mobile connections this site is built for. A
+ * failed scene still counts as "ready" so it never holds the gate open.
  *
- * `disabled` skips Spline entirely — no mount, no network request, just
- * the fallback image from the start. Used to isolate one scene at a time
- * while validating new Spline exports one by one.
+ * `disabled` skips Spline entirely — no mount, no network request, just the
+ * fallback image. Used to isolate one scene at a time when validating exports.
  */
 export default function ScrollScene({
   scene,
@@ -42,48 +46,46 @@ export default function ScrollScene({
   fallbackMode?: 'float' | 'card';
   disabled?: boolean;
 }) {
-  const stage = useRef<HTMLDivElement>(null);
-  const [mount, setMount] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(disabled);
+  const { registerScene, unregisterScene, reportReady } = useScenePreload();
+  const idRef = useRef<number | null>(null);
 
-  // Lazy-mount the runtime near the viewport, and unmount it again once the
-  // section is well out of view. Each mounted scene is its own WebGL
-  // context — with several of these on the page, letting them all
-  // accumulate as the user scrolls past is unnecessary GPU/battery load on
-  // phones, which is most of our traffic. The motion inside each scene is
-  // self-contained (not driven by page scroll position, unlike the hero),
-  // so unmounting and remounting is a clean, harmless reset — worst case a
-  // returning visitor sees the loading shimmer again for a moment.
+  // Register with the preloader on mount; the gate counts on every scene
+  // reporting back exactly once (via `settle`) whether it loads or fails.
   useEffect(() => {
-    if (disabled) return; // never mounts Spline, so nothing to observe
-    const el = stage.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        const intersecting = entries[0].isIntersecting;
-        setMount(intersecting);
-        if (!intersecting) {
-          setLoaded(false);
-          setFailed(false);
-        }
-      },
-      { rootMargin: '600px 0px' },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [disabled]);
+    if (disabled) return;
+    const id = registerScene();
+    idRef.current = id;
+    return () => {
+      idRef.current = null;
+      unregisterScene(id);
+    };
+  }, [disabled, registerScene, unregisterScene]);
+
+  const settle = () => {
+    if (idRef.current !== null) reportReady(idRef.current);
+  };
+
+  const onLoad = () => {
+    setLoaded(true);
+    settle();
+  };
+  const onFail = () => {
+    setFailed(true);
+    settle();
+  };
 
   return (
-    <div ref={stage} className="scene-stage">
-      {mount && !loaded && !failed && (
+    <div className="scene-stage">
+      {!disabled && !loaded && !failed && (
         <div className="scene-loading" aria-hidden="true" />
       )}
-      {mount && !failed && (
-        <SplineBoundary onError={() => setFailed(true)}>
+      {!failed && !disabled && (
+        <SplineBoundary onError={onFail}>
           <Spline
             scene={scene}
-            onLoad={() => setLoaded(true)}
+            onLoad={onLoad}
             className="scene-canvas"
             style={{ opacity: loaded ? 1 : 0 }}
           />
