@@ -285,6 +285,52 @@ section {
   }
 }
 
+/* Sprinkle burst — a scatter of sugar sprinkles pops off any primary
+   button on click, the bakery's answer to a ripple effect. ButtonBurst.tsx
+   spawns these into one fixed, click-through overlay layer positioned by
+   viewport coordinates — deliberately kept outside every button's own DOM
+   subtree, so a click that makes React swap the button's children (e.g.
+   the order popup's Add button turning into a stepper) can never collide
+   with a manually-appended node React doesn't know about. Sits above the
+   order popup and cart drawer (z-index 300/310) so the burst reads even
+   when the tapped button is inside one. */
+.sprinkle-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 340;
+  pointer-events: none;
+}
+.sprinkle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 7px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--c);
+  animation: sprinklePop 0.62s var(--ease-cinematic) forwards;
+}
+@keyframes sprinklePop {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6) rotate(0deg);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(-50%, -50%) scale(1.15) rotate(calc(var(--rot) * 0.3));
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty)))
+      scale(0.5) rotate(var(--rot));
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sprinkle {
+    display: none;
+  }
+}
+
 /* ============================================================
    Scroll reveal — cinematic entrances for non-3D content.
    Elements start hidden/offset and settle into frame once, the
