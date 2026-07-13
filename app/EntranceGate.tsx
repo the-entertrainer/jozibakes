@@ -24,6 +24,7 @@ const MIN_MS = 900; // don't flash away faster than this
 const MAX_MS = 8000; // hard cap so a stalled scene can't trap the user
 const REDUCED_MS = 200;
 const LEAVE_MS = 650; // matches the curtain's exit transition
+const RING_C = 2 * Math.PI * 47; // circumference of the progress ring (r=47)
 
 // Persists across client-side navigations within one page load (but not a
 // full reload), so the gate only greets the visitor once.
@@ -91,16 +92,27 @@ export default function EntranceGate() {
         onClick={leave}
         role="presentation"
       >
-        <Image
-          src="/images/logo.webp"
-          alt="Jozi Bakes"
-          className="gate__logo"
-          width={512}
-          height={524}
-          priority
-        />
-        <div className="gate__bar" aria-hidden="true">
-          <div className="gate__fill" style={{ width: `${pct}%` }} />
+        {/* The logo with the load progress drawn as a ring around it —
+            the mark literally completes as the bakery finishes loading. */}
+        <div className="gate__emblem">
+          <svg className="gate__ring" viewBox="0 0 100 100" aria-hidden="true">
+            <circle className="gate__ringTrack" cx="50" cy="50" r="47" />
+            <circle
+              className="gate__ringFill"
+              cx="50"
+              cy="50"
+              r="47"
+              style={{ strokeDashoffset: RING_C * (1 - pct / 100) }}
+            />
+          </svg>
+          <Image
+            src="/images/logo.webp"
+            alt="Jozi Bakes"
+            className="gate__logo"
+            width={512}
+            height={524}
+            priority
+          />
         </div>
         <div className="gate__hint">
           {pct < 100 ? 'Warming the oven' : 'Tap to enter'}

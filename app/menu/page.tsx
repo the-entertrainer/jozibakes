@@ -37,8 +37,10 @@ export default function MenuPage() {
 
       <nav className="nav">
         <div className="wrap nav__inner">
-          <Link href="/" className="nav__brand">
-            Jozi Bakes
+          {/* the illustrated mark instead of a text wordmark — the page's
+              own headings carry the brand type */}
+          <Link href="/" className="nav__mark" aria-label="Jozi Bakes — home">
+            <Image src="/images/logo.webp" alt="" width={80} height={82} />
           </Link>
           <a
             className="nav__ig"

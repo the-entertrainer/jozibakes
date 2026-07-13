@@ -91,15 +91,60 @@ a {
   transition: opacity 0.6s var(--ease-cinematic), transform 0.6s var(--ease-cinematic);
 }
 .gate--leaving {
+  /* leaving zooms *through* the mark into the page, rather than a flat fade */
   opacity: 0;
-  transform: translateY(-4%);
+  transform: scale(1.08);
   pointer-events: none;
 }
+/* Logo + progress ring lockup. The ring is the loader: its stroke draws
+   clockwise around the mark as scenes stream in, so the brand literally
+   completes when the bakery is ready. */
+.gate__emblem {
+  position: relative;
+  width: clamp(190px, 40vw, 270px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  animation: gatePop 0.55s var(--ease-cinematic) both;
+}
 .gate__logo {
-  width: clamp(150px, 32vw, 230px);
+  width: 74%;
   height: auto;
   filter: drop-shadow(0 14px 30px rgba(140, 36, 29, 0.2));
-  animation: gateBreathe 3s ease-in-out infinite;
+  animation: gateBreathe 3.2s ease-in-out 0.6s infinite;
+}
+.gate__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.gate__ringTrack,
+.gate__ringFill {
+  fill: none;
+  stroke-width: 2.25;
+}
+.gate__ringTrack {
+  stroke: rgba(140, 36, 29, 0.14);
+}
+.gate__ringFill {
+  stroke: var(--red-deep);
+  stroke-linecap: round;
+  /* dasharray = 2π·47; offset driven inline by real scene-load progress */
+  stroke-dasharray: 295.31;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 0.45s var(--ease-cinematic);
+}
+@keyframes gatePop {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 @keyframes gateBreathe {
   0%,
@@ -107,23 +152,8 @@ a {
     transform: scale(1);
   }
   50% {
-    transform: scale(1.035);
+    transform: scale(1.03);
   }
-}
-.gate__bar {
-  width: min(220px, 60vw);
-  height: 3px;
-  border-radius: 999px;
-  background: rgba(140, 36, 29, 0.15);
-  overflow: hidden;
-}
-.gate__fill {
-  height: 100%;
-  width: 0;
-  border-radius: inherit;
-  background: var(--red-deep);
-  /* driven by real scene-load progress from EntranceGate */
-  transition: width 0.45s var(--ease-cinematic);
 }
 .gate__hint {
   font-size: 0.72rem;
@@ -143,11 +173,12 @@ a {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .gate__fill {
+  .gate__ringFill {
     transition-duration: 0.15s;
   }
   .gate__hint,
-  .gate__logo {
+  .gate__logo,
+  .gate__emblem {
     animation: none;
   }
 }
@@ -394,10 +425,29 @@ section {
   min-height: 46px;
   padding-block: 0.35rem;
 }
-.nav__brand {
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  font-size: 1.05rem;
+/* Home nav holds only the Instagram link — the hero right below carries
+   the full brand lockup, so nothing is repeated an inch above it. */
+.nav__inner--end {
+  justify-content: flex-end;
+}
+/* Illustrated mark as the home link on inner pages */
+.nav__mark {
+  display: inline-flex;
+  padding: 0.25rem;
+  margin: -0.25rem;
+  transition: opacity 0.15s ease;
+}
+.nav__mark img {
+  width: 38px;
+  height: auto;
+}
+.nav__mark:hover {
+  opacity: 0.85;
+}
+.nav__mark:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 .nav__cta {
   display: inline-block;
@@ -476,6 +526,102 @@ section {
   display: flex;
   align-items: flex-start;
 }
+/* Soft clouds drifting across the sky. They sit in the same z-plane as
+   the scene but earlier in the DOM, so the transparent Spline canvas
+   paints the diorama over them — they read as sky behind the shop.
+   Pure transform animation, compositor-only. */
+.hero__clouds {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.hero__clouds span {
+  position: absolute;
+  width: clamp(260px, 42vw, 560px);
+  aspect-ratio: 2.3;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0) 70%
+  );
+  animation: cloudDrift 64s ease-in-out infinite alternate;
+}
+.hero__clouds span:nth-child(1) {
+  top: 6%;
+  left: -6%;
+  opacity: 0.75;
+}
+.hero__clouds span:nth-child(2) {
+  top: 20%;
+  right: -8%;
+  opacity: 0.6;
+  animation-duration: 78s;
+  animation-delay: -22s;
+}
+.hero__clouds span:nth-child(3) {
+  top: 3%;
+  left: 42%;
+  opacity: 0.5;
+  animation-duration: 92s;
+  animation-delay: -47s;
+}
+@keyframes cloudDrift {
+  from {
+    transform: translateX(-4%);
+  }
+  to {
+    transform: translateX(7%);
+  }
+}
+/* Rotating baker's-stamp badge — quiet circular type spinning slowly on
+   the sky, desktop only (it would crowd a phone hero). */
+.hero__stamp {
+  position: absolute;
+  z-index: 2;
+  top: clamp(5.5rem, 14vh, 9rem);
+  right: clamp(2rem, 7vw, 6rem);
+  width: clamp(104px, 11vw, 148px);
+  aspect-ratio: 1;
+  color: var(--red-deep);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.hero__stamp svg {
+  width: 100%;
+  height: 100%;
+  animation: stampSpin 26s linear infinite;
+}
+.hero__stamp text {
+  font-family: var(--font);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  fill: currentColor;
+}
+.hero__stampHeart {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.1rem, 1.6vw, 1.5rem);
+}
+@keyframes stampSpin {
+  to {
+    rotate: 360deg;
+  }
+}
+@media (max-width: 900px) {
+  .hero__stamp {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__clouds span,
+  .hero__stamp svg {
+    animation: none;
+  }
+}
 /* The scene fills the whole hero box, exactly matching its corners. */
 .hero__art {
   position: absolute;
@@ -542,8 +688,8 @@ section {
 }
 .hero__title {
   color: var(--red-deep);
-  line-height: 0.98;
-  font-size: clamp(3.4rem, 11vw, 7rem);
+  line-height: 1.04;
+  font-size: clamp(2.9rem, 9vw, 5.75rem);
 }
 .hero__tag {
   margin-top: 0.9rem;
@@ -560,6 +706,32 @@ section {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem 0.9rem;
+}
+/* Quiet proof points under the CTAs — substance without shouting */
+.hero__points {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 1.1rem;
+  margin-top: clamp(1.3rem, 2.8vw, 1.9rem);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--red-deep);
+  opacity: 0.72;
+}
+.hero__points li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+}
+.hero__points li::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
 }
 .hero__gallery {
   gap: 0.55em;
@@ -1966,13 +2138,12 @@ a.contact__value:hover {
 }
 
 /* ============================================================
-   Display type — the logo's hand-lettered voice (Chewy) carried
-   through every heading. Kept at the end of the sheet so it wins
-   the cascade over each heading's original geometric-sans metrics:
-   Chewy ships a single 400 weight (a synthetic 800 would smear its
-   strokes), and its bouncing letterforms need their negative
-   tracking relaxed and a touch more line-height than the old
-   tight-set Poppins headings.
+   Display type — the brand face (Alfa Slab One) carried through
+   every heading. Kept at the end of the sheet so it wins the
+   cascade over each heading's original geometric-sans metrics:
+   the face ships a single 400 weight (a synthetic 800 would smear
+   its slab strokes), and its wide letterforms need the old tight
+   negative tracking relaxed plus a touch more line-height.
    ============================================================ */
 .hero__title,
 .menuIntro__head,
@@ -1981,24 +2152,39 @@ a.contact__value:hover {
 .contact__head,
 .gallery__title,
 .order__title,
-.cart__title,
-.nav__brand {
+.cart__title {
   font-family: var(--display);
   font-weight: 400;
-  letter-spacing: 0.015em;
+  letter-spacing: 0.01em;
 }
 .menuIntro__head,
 .product__head,
 .about__head,
 .contact__head,
 .gallery__title {
-  line-height: 0.98;
+  line-height: 1;
 }
 .order__title,
 .cart__title {
-  line-height: 1.05;
+  line-height: 1.08;
 }
-.nav__brand {
-  font-size: 1.35rem;
-  line-height: 1;
+/* Alfa Slab sets much wider than the old Poppins 800 — pull the display
+   sizes down a step so the big heads still fit their columns */
+.product__head {
+  font-size: clamp(2.7rem, 8vw, 5.75rem);
+}
+.about__head {
+  font-size: clamp(2.7rem, 8.5vw, 6rem);
+}
+.menuIntro__head {
+  font-size: clamp(2.3rem, 8vw, 4.75rem);
+}
+.contact__head {
+  font-size: clamp(2.2rem, 7vw, 5rem);
+}
+.gallery__title {
+  font-size: clamp(2.2rem, 7.5vw, 4.5rem);
+}
+.order__title {
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
 }
