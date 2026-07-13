@@ -12,6 +12,7 @@
 
   --teal: #1e8d80;         /* the storefront teal from the 3D dioramas */
   --teal-deep: #14655c;    /* its shaded underside */
+  --sky: #e7f2ee;          /* pale morning-sky behind the hero's 3D scene */
 
   --font: var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Helvetica, Arial, sans-serif;
@@ -522,8 +523,11 @@ section {
 .hero {
   position: relative;
   overflow: hidden;
-  background: var(--red);
-  color: var(--cream);
+  /* pale sky up top easing into warm paper toward the diorama's ground
+     plane — the Spline canvas is transparent, so this is what actually
+     shows around and behind the shop model */
+  background: linear-gradient(180deg, var(--sky) 0%, var(--paper) 100%);
+  color: var(--red-deep);
   min-height: 90vh; /* fallback for browsers without svh */
   min-height: clamp(600px, 92svh, 940px);
   display: flex;
@@ -551,12 +555,14 @@ section {
   border-radius: 0;
   object-fit: cover;
 }
-/* Brand-red scrim between the scene and the copy. The Spline camera is
-   live — zoom or scroll can park bright geometry right behind the tagline
-   and buttons — so the wash has to cover the whole text/CTA zone at all
-   times, not just the title. Many close-together stops approximate an
-   eased curve, so it melts into the diorama with no visible edge instead
-   of cutting off, and the lowest quarter stays clear for the scene. */
+/* Sky-toned scrim between the scene and the copy, in the same hue as the
+   .hero background so it blends in rather than reading as a separate
+   layer. The Spline camera is live — zoom or scroll can park bright
+   geometry right behind the tagline and buttons — so the wash has to
+   cover the whole text/CTA zone at all times, not just the title. Many
+   close-together stops approximate an eased curve, so it melts into the
+   diorama with no visible edge instead of cutting off, and the lowest
+   quarter stays clear for the scene. */
 .hero::after {
   content: '';
   position: absolute;
@@ -564,13 +570,13 @@ section {
   z-index: 1;
   background: linear-gradient(
     to bottom,
-    var(--red) 0%,
-    rgba(151, 25, 29, 0.96) 22%,
-    rgba(151, 25, 29, 0.86) 38%,
-    rgba(151, 25, 29, 0.68) 52%,
-    rgba(151, 25, 29, 0.46) 64%,
-    rgba(151, 25, 29, 0.22) 76%,
-    rgba(151, 25, 29, 0) 88%
+    var(--sky) 0%,
+    rgba(231, 242, 238, 0.96) 22%,
+    rgba(231, 242, 238, 0.86) 38%,
+    rgba(231, 242, 238, 0.68) 52%,
+    rgba(231, 242, 238, 0.46) 64%,
+    rgba(231, 242, 238, 0.22) 76%,
+    rgba(231, 242, 238, 0) 88%
   );
   pointer-events: none;
 }
@@ -581,7 +587,7 @@ section {
   padding-top: clamp(2rem, 8vh, 5rem);
 }
 .hero__title {
-  color: var(--cream);
+  color: var(--red-deep);
   font-weight: 800;
   line-height: 0.84;
   letter-spacing: -0.045em;
@@ -589,8 +595,8 @@ section {
 }
 .hero__tag {
   margin-top: 1.1rem;
-  color: var(--cream);
-  opacity: 0.9;
+  color: var(--red-deep);
+  opacity: 0.85;
   font-family: var(--font-accent);
   font-size: clamp(1.15rem, 2.4vw, 1.55rem);
   font-weight: 500;

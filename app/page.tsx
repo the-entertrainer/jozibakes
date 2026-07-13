@@ -54,7 +54,7 @@ export default function Home() {
               &ldquo;Artisanal bakery in Kharghar.&rdquo;
             </Reveal>
             <Reveal variant="up" delay={280} className="hero__actions">
-              <MagneticLink href="/menu" className="btn btn--light">
+              <MagneticLink href="/menu" className="btn btn--red">
                 Order Now
               </MagneticLink>
               <MagneticLink href="/gallery" className="btn btn--teal hero__gallery">
