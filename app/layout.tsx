@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Poppins, Fraunces } from 'next/font/google';
+import { Poppins, Fraunces, Chewy } from 'next/font/google';
 import './globals.css';
 import CartProvider from './CartProvider';
 import ScenePreloadProvider from './ScenePreloadProvider';
@@ -16,6 +16,16 @@ const fraunces = Fraunces({
   weight: ['400', '500', '600'],
   style: ['italic', 'normal'],
   variable: '--font-fraunces',
+  display: 'swap',
+});
+
+// Display face for headings — the closest Google Fonts match to the
+// hand-lettered wordmark in the Jozi Bakes logo (chunky rounded strokes,
+// bouncing baseline, curled terminals). Single 400 weight.
+const chewy = Chewy({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-display',
   display: 'swap',
 });
 
@@ -46,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${poppins.variable} ${fraunces.variable}`}>
+    <html lang="en" className={`${poppins.variable} ${fraunces.variable} ${chewy.variable}`}>
       <body>
         <ScenePreloadProvider>
           <CartProvider>{children}</CartProvider>

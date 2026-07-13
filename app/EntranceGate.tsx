@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { useScenePreload } from './ScenePreloadProvider';
 
@@ -90,7 +91,14 @@ export default function EntranceGate() {
         onClick={leave}
         role="presentation"
       >
-        <div className="gate__brand">Jozi Bakes</div>
+        <Image
+          src="/images/logo.webp"
+          alt="Jozi Bakes"
+          className="gate__logo"
+          width={512}
+          height={524}
+          priority
+        />
         <div className="gate__bar" aria-hidden="true">
           <div className="gate__fill" style={{ width: `${pct}%` }} />
         </div>

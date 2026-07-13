@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import ScrollScene from './ScrollScene';
 import Reveal from './Reveal';
@@ -45,15 +46,26 @@ export default function Home() {
         </div>
         <div className="wrap hero__inner">
           <div className="hero__text">
-            <Reveal as="h1" variant="clip" className="hero__title">
+            <Reveal variant="scale" className="hero__logo">
+              {/* decorative — the wordmark it carries is restated by the
+                  h1 right below */}
+              <Image
+                src="/images/logo.webp"
+                alt=""
+                width={512}
+                height={524}
+                priority
+              />
+            </Reveal>
+            <Reveal as="h1" variant="clip" delay={100} className="hero__title">
               Jozi
               <br />
               Bakes
             </Reveal>
-            <Reveal as="p" variant="up" delay={150} className="hero__tag">
+            <Reveal as="p" variant="up" delay={200} className="hero__tag">
               &ldquo;Artisanal bakery in Kharghar.&rdquo;
             </Reveal>
-            <Reveal variant="up" delay={280} className="hero__actions">
+            <Reveal variant="up" delay={320} className="hero__actions">
               <MagneticLink href="/menu" className="btn btn--red">
                 Order Now
               </MagneticLink>
