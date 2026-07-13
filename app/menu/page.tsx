@@ -30,14 +30,6 @@ const BREADS = CATEGORY_BY_ID.breads;
 const COOKIES = CATEGORY_BY_ID.cookies;
 const LOAF = CATEGORY_BY_ID.loaf;
 
-function SectionNum({ n }: { n: string }) {
-  return (
-    <span className="section-num" aria-hidden="true">
-      {n}
-    </span>
-  );
-}
-
 export default function MenuPage() {
   return (
     <main>
@@ -79,7 +71,6 @@ export default function MenuPage() {
 
       {/* Sweet Treats */}
       <section className="product product--treats grain">
-        <SectionNum n="01" />
         <div className="wrap product__inner">
           <div className="product__art">
             <ScrollScene
@@ -91,7 +82,7 @@ export default function MenuPage() {
           </div>
           <div className="product__text">
             <Reveal as="span" variant="fade" className="eyebrow">
-              Sweet Treats
+              Small-Batch Sweets
             </Reveal>
             <Reveal as="h2" variant="clip" className="product__head">
               Sweet Treats
@@ -113,11 +104,10 @@ export default function MenuPage() {
 
       {/* Breads */}
       <section className="product product--breads grain">
-        <SectionNum n="02" />
         <div className="wrap product__inner">
           <div className="product__text">
             <Reveal as="span" variant="fade" className="eyebrow">
-              Breads
+              Baked Fresh Daily
             </Reveal>
             <Reveal as="h2" variant="clip" className="product__head">
               Breads
@@ -147,7 +137,6 @@ export default function MenuPage() {
 
       {/* Cookies */}
       <section className="product product--cookies grain">
-        <SectionNum n="03" />
         <div className="wrap product__inner">
           <div className="product__art">
             <ScrollScene
@@ -159,7 +148,7 @@ export default function MenuPage() {
           </div>
           <div className="product__text">
             <Reveal as="span" variant="fade" className="eyebrow">
-              Cookies
+              Straight From The Oven
             </Reveal>
             <Reveal as="h2" variant="clip" className="product__head">
               Cookies
@@ -181,11 +170,10 @@ export default function MenuPage() {
 
       {/* Loaf Cakes */}
       <section className="product product--loaf grain">
-        <SectionNum n="04" />
         <div className="wrap product__inner">
           <div className="product__text">
             <Reveal as="span" variant="fade" className="eyebrow">
-              Loaf Cakes
+              Slow-Baked Comfort
             </Reveal>
             <Reveal as="h2" variant="clip" className="product__head">
               Loaf Cakes
@@ -215,10 +203,9 @@ export default function MenuPage() {
 
       {/* About */}
       <section className="about grain">
-        <SectionNum n="05" />
         <div className="wrap">
           <Reveal as="span" variant="fade" className="eyebrow">
-            About
+            Our Story
           </Reveal>
           <Reveal as="h2" variant="clip" className="about__head">
             About
@@ -280,7 +267,6 @@ export default function MenuPage() {
           />
         </div>
         <div className="contact grain">
-          <SectionNum n="06" />
           <div className="wrap">
             <Reveal as="span" variant="fade" className="eyebrow">
               Visit Us

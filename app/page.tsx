@@ -2,6 +2,7 @@ import Link from 'next/link';
 import ScrollScene from './ScrollScene';
 import Reveal from './Reveal';
 import EntranceGate from './EntranceGate';
+import MagneticLink from './MagneticLink';
 import { InstagramIcon, GalleryIcon } from './Icons';
 
 const HERO_SCENE =
@@ -53,13 +54,13 @@ export default function Home() {
               &ldquo;Artisanal bakery in Kharghar.&rdquo;
             </Reveal>
             <Reveal variant="up" delay={280} className="hero__actions">
-              <Link href="/menu" className="btn btn--light">
+              <MagneticLink href="/menu" className="btn btn--light">
                 Order Now
-              </Link>
-              <Link href="/gallery" className="btn btn--teal hero__gallery">
+              </MagneticLink>
+              <MagneticLink href="/gallery" className="btn btn--teal hero__gallery">
                 <GalleryIcon />
                 Made with love
-              </Link>
+              </MagneticLink>
             </Reveal>
           </div>
         </div>

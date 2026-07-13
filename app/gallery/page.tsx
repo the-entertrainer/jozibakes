@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import MagneticLink from '../MagneticLink';
 import { BackIcon } from '../Icons';
 
 export const metadata = {
@@ -51,9 +52,9 @@ export default function GalleryPage() {
       </div>
 
       <footer className="gallery__foot">
-        <Link href="/" className="btn btn--light">
+        <MagneticLink href="/" className="btn btn--light">
           Back to home
-        </Link>
+        </MagneticLink>
       </footer>
     </main>
   );

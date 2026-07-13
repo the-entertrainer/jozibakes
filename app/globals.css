@@ -8,9 +8,7 @@
   --paper: #fff8ee;        /* cream section backgrounds */
   --ink: #1a1a1a;          /* dark body copy on cream */
 
-  --ph-green: #7ed957;     /* blueprint placeholder blocks */
-  --ph-purple: #5e17eb;
-  --ph-yellow: #ffde59;
+  --ph-yellow: #ffde59;    /* about-photo accent card */
 
   --teal: #1e8d80;         /* the storefront teal from the 3D dioramas */
   --teal-deep: #14655c;    /* its shaded underside */
@@ -141,47 +139,12 @@ section {
   position: relative;
   overflow: hidden;
   /* establishes a stacking context on every section so a negative z-index
-     inside one (see .section-num) stays scoped to it instead of escaping
+     inside one (see .grain::before) stays scoped to it instead of escaping
      to paint behind neighbouring sections */
   z-index: 0;
 }
 
-/* Big architectural chapter numbers — the page's answer to str8fire-style
-   numeric anchors. Outlined, low-opacity, sits behind the section's own
-   content; -webkit-text-stroke is broadly supported, with a plain faint
-   fill as the fallback for the few browsers that don't. */
-.section-num {
-  position: absolute;
-  z-index: -1;
-  top: clamp(0.5rem, 2vw, 1.75rem);
-  right: clamp(0.5rem, 3vw, 2.5rem);
-  font-family: var(--font);
-  font-weight: 800;
-  font-size: clamp(6rem, 20vw, 13rem);
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: transparent;
-  /* explicit stroke colour, NOT currentColor — currentColor would resolve
-     against this same element's `color: transparent` above and vanish */
-  -webkit-text-stroke-width: 2px;
-  -webkit-text-stroke-color: var(--section-num-color, var(--red-deep));
-  opacity: 0.22;
-  pointer-events: none;
-  user-select: none;
-}
-@supports not (-webkit-text-stroke-width: 1px) {
-  .section-num {
-    color: var(--section-num-color, var(--red-deep));
-    opacity: 0.1;
-  }
-}
-/* on red-background sections the marker needs to read in cream instead */
-.product--treats,
-.product--cookies {
-  --section-num-color: var(--cream);
-}
-
-/* Chapter labels — small "scene number" tags that sit above each section
+/* Chapter labels — small tags that sit above each section
    heading, reinforcing the page as a sequence of cinematic beats. */
 .eyebrow {
   display: inline-flex;
