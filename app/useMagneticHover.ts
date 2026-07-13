@@ -18,8 +18,10 @@ export function useMagneticHover<T extends HTMLElement>() {
     const r = el.getBoundingClientRect();
     const x = e.clientX - (r.left + r.width / 2);
     const y = e.clientY - (r.top + r.height / 2);
-    el.style.transition = 'transform 0.15s ease-out';
-    el.style.transform = `translate(${x * 0.22}px, ${y * 0.3}px)`;
+    // deliberately small multipliers — the lean should register as
+    // responsiveness, not as the button chasing the cursor
+    el.style.transition = 'transform 0.18s ease-out';
+    el.style.transform = `translate(${x * 0.12}px, ${y * 0.14}px)`;
   };
 
   const onMouseLeave = () => {

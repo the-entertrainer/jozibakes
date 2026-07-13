@@ -3,7 +3,6 @@ import { Poppins, Fraunces } from 'next/font/google';
 import './globals.css';
 import CartProvider from './CartProvider';
 import ScenePreloadProvider from './ScenePreloadProvider';
-import ButtonBurst from './ButtonBurst';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -52,7 +51,6 @@ export default function RootLayout({
         <ScenePreloadProvider>
           <CartProvider>{children}</CartProvider>
         </ScenePreloadProvider>
-        <ButtonBurst />
       </body>
     </html>
   );

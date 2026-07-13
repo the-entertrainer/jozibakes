@@ -22,6 +22,18 @@
   --maxw: 1200px;
 
   --ease-cinematic: cubic-bezier(0.16, 1, 0.3, 1);
+  /* micro-interaction curve — fast start, soft landing; used for every
+     hover/press so all controls share one motion signature */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* Elevation scale for interactive elements — one shadow system reused
+     everywhere so nothing invents its own depth */
+  --shadow-rest: 0 1px 2px rgba(26, 10, 8, 0.1),
+    0 6px 16px -6px rgba(26, 10, 8, 0.25);
+  --shadow-raised: 0 2px 4px rgba(26, 10, 8, 0.08),
+    0 12px 28px -8px rgba(26, 10, 8, 0.3);
+  --shadow-pressed: 0 1px 2px rgba(26, 10, 8, 0.12),
+    0 3px 8px -4px rgba(26, 10, 8, 0.2);
 }
 
 *,
@@ -167,168 +179,74 @@ section {
   opacity: 0.7;
 }
 
-/* Buttons — chunky toy-shop buttons borrowed straight from the 3D
-   dioramas: soft rounded pills with a glossy top light, a solid extruded
-   underside and a little ground shadow, so they read as pressable objects
-   sitting in the scene rather than flat graphics. Hovering lifts one with
-   a happy wiggle; pressing pushes it down onto its base. The lift/press
-   uses the individual `translate`/`rotate` properties so the wiggle
-   keyframes never fight the lift transition — browsers without them just
-   keep the colour and shadow changes. */
+/* Buttons — quiet, confident pills sharing one elevation system: a soft
+   two-layer shadow at rest, a 1px rise with a deeper shadow on hover, a
+   firm settle on press. Motion is short (≤200ms) and eased so controls
+   feel engineered, not animated. The lift uses the individual `translate`
+   property so it composes with the magnetic cursor-lean, which drives
+   `transform` inline (see useMagneticHover). */
 .btn {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6em;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  font-size: clamp(0.95rem, 1.4vw, 1.1rem);
-  line-height: 1.2;
-  padding: 0.9em 1.9em;
+  gap: 0.5em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-size: clamp(0.9rem, 1.2vw, 1rem);
+  line-height: 1;
+  padding: 1.05em 2em;
   border: none;
   border-radius: 999px;
   cursor: pointer;
   color: var(--btn-ink);
   background-color: var(--btn-face);
-  /* top sheen + a faint shaded bottom, the same soft studio light the
-     Spline scenes are rendered under */
-  background-image: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.32),
-      rgba(255, 255, 255, 0) 52%
-    ),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0) 38%);
   translate: 0 0;
-  box-shadow: 0 0.28em 0 var(--btn-edge),
-    0 0.9em 1.1em -0.5em rgba(24, 6, 6, 0.5);
-  transition: translate 0.22s var(--ease-cinematic),
-    box-shadow 0.22s var(--ease-cinematic), background-color 0.25s ease;
-}
-.btn::after {
-  /* arrow glides in from the left on hover, nudging the label over */
-  content: '\2192';
-  display: inline-block;
-  width: 0;
-  opacity: 0;
-  transform: translateX(-6px);
-  transition: width 0.28s var(--ease-cinematic), opacity 0.28s var(--ease-cinematic),
-    transform 0.28s var(--ease-cinematic);
+  box-shadow: var(--shadow-rest);
+  transition: background-color 0.18s ease, box-shadow 0.2s var(--ease-out),
+    translate 0.2s var(--ease-out);
 }
 .btn:hover {
-  translate: 0 -0.14em;
-  box-shadow: 0 0.42em 0 var(--btn-edge),
-    0 1.2em 1.3em -0.5em rgba(24, 6, 6, 0.55);
-  animation: btnWiggle 0.5s var(--ease-cinematic);
-}
-.btn:hover::after {
-  width: 1em;
-  opacity: 1;
-  transform: translateX(0);
-  /* once the arrow has slid in, it keeps wagging — starts from the same
-     translateX(0) the transition lands on, so there's no jump */
-  animation: btnArrowWag 0.9s ease-in-out 0.35s infinite;
+  background-color: var(--btn-face-hover, var(--btn-face));
+  translate: 0 -1px;
+  box-shadow: var(--shadow-raised);
 }
 .btn:active {
-  translate: 0 0.2em;
-  box-shadow: 0 0.08em 0 var(--btn-edge),
-    0 0.45em 0.7em -0.35em rgba(24, 6, 6, 0.45);
-  animation: none;
+  translate: 0 0;
+  box-shadow: var(--shadow-pressed);
+  transition-duration: 0.08s;
 }
 .btn:focus-visible {
-  outline: 3px dashed currentColor;
-  outline-offset: 4px;
+  outline: 2px solid var(--btn-ring, var(--red-deep));
+  outline-offset: 3px;
 }
-@keyframes btnWiggle {
-  0%,
-  100% {
-    rotate: 0deg;
-  }
-  30% {
-    rotate: -2.5deg;
-  }
-  65% {
-    rotate: 1.8deg;
-  }
+.btn:disabled {
+  opacity: 0.45;
+  pointer-events: none;
 }
-@keyframes btnArrowWag {
-  50% {
-    transform: translateX(0.22em);
-  }
-}
-/* Vanilla-biscuit button: white face, baked-edge underside */
 .btn--light {
   --btn-face: #fff;
+  --btn-face-hover: #fdf6ea;
   --btn-ink: var(--red);
-  --btn-edge: #dfc49a;
 }
 .btn--red {
   --btn-face: var(--red-deep);
-  --btn-ink: var(--cream);
-  --btn-edge: #5c0f12;
+  --btn-face-hover: #7a1c16;
+  --btn-ink: var(--paper);
 }
 /* Secondary action on the hero — solid storefront teal, lifted straight
-   from the shop diorama, so it stays readable over the busy 3D art
-   (a see-through outline vanished into the scene). It carries its own
-   icon, so no sliding arrow. */
+   from the shop diorama, so it stays readable over the busy 3D art. */
 .btn--teal {
   --btn-face: var(--teal);
+  --btn-face-hover: #1a7c70;
   --btn-ink: #fff;
-  --btn-edge: var(--teal-deep);
-}
-.btn--teal::after {
-  content: none;
+  --btn-ring: var(--teal);
 }
 @media (prefers-reduced-motion: reduce) {
+  .btn,
   .btn:hover,
-  .btn:hover::after {
-    animation: none;
-  }
-}
-
-/* Sprinkle burst — a scatter of sugar sprinkles pops off any primary
-   button on click, the bakery's answer to a ripple effect. ButtonBurst.tsx
-   spawns these into one fixed, click-through overlay layer positioned by
-   viewport coordinates — deliberately kept outside every button's own DOM
-   subtree, so a click that makes React swap the button's children (e.g.
-   the order popup's Add button turning into a stepper) can never collide
-   with a manually-appended node React doesn't know about. Sits above the
-   order popup and cart drawer (z-index 300/310) so the burst reads even
-   when the tapped button is inside one. */
-.sprinkle-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 340;
-  pointer-events: none;
-}
-.sprinkle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 7px;
-  height: 3px;
-  border-radius: 999px;
-  background: var(--c);
-  animation: sprinklePop 0.62s var(--ease-cinematic) forwards;
-}
-@keyframes sprinklePop {
-  0% {
-    transform: translate(-50%, -50%) scale(0.6) rotate(0deg);
-    opacity: 1;
-  }
-  25% {
-    transform: translate(-50%, -50%) scale(1.15) rotate(calc(var(--rot) * 0.3));
-    opacity: 1;
-  }
-  100% {
-    transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty)))
-      scale(0.5) rotate(var(--rot));
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .sprinkle {
-    display: none;
+  .btn:active {
+    translate: 0 0;
   }
 }
 
@@ -479,6 +397,7 @@ section {
      comfortable thumb target without shifting the visible label */
   padding: 1em 0.2em;
   margin: -1em -0.2em;
+  transition: opacity 0.15s ease;
 }
 .nav__cta:hover {
   opacity: 0.8;
@@ -490,6 +409,7 @@ section {
   /* pad the ~26px icon out to a comfortable thumb target */
   padding: 0.5rem;
   margin: -0.5rem;
+  transition: opacity 0.15s ease;
 }
 .nav__ig svg {
   width: 26px;
@@ -497,6 +417,12 @@ section {
 }
 .nav__ig:hover {
   opacity: 0.8;
+}
+.nav__ig:focus-visible,
+.nav__cta:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 /* On the home page the nav sits atop the full-screen hero — drop the seam. */
 .nav--home {
@@ -616,26 +542,6 @@ section {
   width: 1.15em;
   height: 1.15em;
   flex-shrink: 0;
-}
-.hero__gallery:hover svg {
-  animation: iconWiggle 0.55s var(--ease-cinematic);
-}
-@keyframes iconWiggle {
-  0%,
-  100% {
-    rotate: 0deg;
-  }
-  30% {
-    rotate: -12deg;
-  }
-  65% {
-    rotate: 9deg;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .hero__gallery:hover svg {
-    animation: none;
-  }
 }
 
 /* ============================================================
@@ -904,6 +810,18 @@ section {
   font-weight: 700;
   font-size: clamp(0.92rem, 1.2vw, 1.02rem);
   text-align: left;
+  /* rows sit slightly quiet until engaged, so the open/hovered one reads */
+  opacity: 0.78;
+  transition: opacity 0.18s ease;
+}
+.accordion__trigger:hover,
+.accordion__trigger:focus-visible,
+.accordion__item.is-open .accordion__trigger {
+  opacity: 1;
+}
+.accordion__trigger:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
 .accordion__icon {
   position: relative;
@@ -1183,6 +1101,7 @@ section {
      target while keeping its visual size and position unchanged */
   padding: 0.5rem;
   margin: -0.5rem;
+  transition: opacity 0.15s ease;
 }
 .contact__social:hover {
   opacity: 0.7;
@@ -1206,8 +1125,16 @@ section {
   font-size: 1.15rem;
   font-weight: 500;
 }
-.contact__value:hover {
+a.contact__value {
+  /* underline is always drawn but transparent, so hover only fades it in —
+     no layout shift, no abrupt snap */
   text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 0.18s ease;
+}
+a.contact__value:hover {
+  text-decoration-color: currentColor;
 }
 
 /* ============================================================
@@ -1236,6 +1163,7 @@ section {
   display: inline-block;
   padding-block: 0.6em;
   margin-block: -0.6em;
+  transition: opacity 0.15s ease;
 }
 .footer__links a:hover {
   opacity: 0.75;
@@ -1267,13 +1195,18 @@ section {
   line-height: 1;
   cursor: pointer;
   border-radius: 50%;
-  transition: background 0.2s ease, transform 0.15s ease;
+  transition: background-color 0.15s ease, transform 0.15s var(--ease-out);
 }
 .stepper__btn:hover {
-  background: rgba(140, 36, 29, 0.12);
+  background-color: rgba(140, 36, 29, 0.1);
 }
 .stepper__btn:active {
-  transform: scale(0.9);
+  transform: scale(0.92);
+  background-color: rgba(140, 36, 29, 0.16);
+}
+.stepper__btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
 }
 .stepper__count {
   min-width: 1.4ch;
@@ -1336,6 +1269,7 @@ section {
   cursor: pointer;
   display: grid;
   place-items: center;
+  transition: background-color 0.15s ease, transform 0.15s var(--ease-out);
 }
 .order__close span,
 .cart__close span {
@@ -1358,7 +1292,16 @@ section {
 }
 .order__close:hover,
 .cart__close:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background-color: rgba(255, 255, 255, 0.28);
+}
+.order__close:active,
+.cart__close:active {
+  transform: scale(0.92);
+}
+.order__close:focus-visible,
+.cart__close:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
 .order__head {
   background: var(--red);
@@ -1402,7 +1345,7 @@ section {
 .order__tab {
   flex: 0 0 auto;
   border: 1.5px solid rgba(140, 36, 29, 0.3);
-  background: none;
+  background-color: transparent;
   color: var(--red-deep);
   border-radius: 999px;
   padding: 0.45rem 1rem;
@@ -1410,12 +1353,22 @@ section {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: background-color 0.18s ease, color 0.18s ease,
+    border-color 0.18s ease;
 }
-.order__tab--on {
-  background: var(--red-deep);
+.order__tab:hover {
+  background-color: rgba(140, 36, 29, 0.08);
+  border-color: rgba(140, 36, 29, 0.5);
+}
+.order__tab:focus-visible {
+  outline: 2px solid var(--red-deep);
+  outline-offset: 2px;
+}
+.order__tab--on,
+.order__tab--on:hover {
+  background-color: var(--red-deep);
   border-color: var(--red-deep);
-  color: var(--cream);
+  color: var(--paper);
 }
 .order__list {
   flex: 1;
@@ -1466,33 +1419,38 @@ section {
   color: var(--red-deep);
   align-self: end;
 }
+/* Compact list-row action — same elevation grammar as .btn, scaled down */
 .order__add {
   grid-area: action;
   justify-self: end;
   border: none;
   background-color: var(--red-deep);
-  background-image: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.25),
-    rgba(255, 255, 255, 0) 55%
-  );
-  color: var(--cream);
+  color: var(--paper);
   border-radius: 999px;
-  padding: 0.45rem 1.4rem;
+  padding: 0.5rem 1.35rem;
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.85rem;
+  line-height: 1;
   cursor: pointer;
-  box-shadow: 0 3px 0 #5c0f12;
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  translate: 0 0;
+  box-shadow: 0 1px 2px rgba(26, 10, 8, 0.1), 0 4px 10px -4px rgba(26, 10, 8, 0.22);
+  transition: background-color 0.18s ease, box-shadow 0.2s var(--ease-out),
+    translate 0.2s var(--ease-out);
 }
 .order__add:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 0 #5c0f12, 0 8px 18px -8px rgba(140, 36, 29, 0.7);
+  background-color: #7a1c16;
+  translate: 0 -1px;
+  box-shadow: 0 2px 4px rgba(26, 10, 8, 0.08), 0 8px 18px -6px rgba(26, 10, 8, 0.28);
 }
 .order__add:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #5c0f12;
+  translate: 0 0;
+  box-shadow: 0 1px 2px rgba(26, 10, 8, 0.12), 0 2px 6px -3px rgba(26, 10, 8, 0.2);
+  transition-duration: 0.08s;
+}
+.order__add:focus-visible {
+  outline: 2px solid var(--red-deep);
+  outline-offset: 2px;
 }
 .order__item .stepper {
   grid-area: action;
@@ -1634,6 +1592,7 @@ section {
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 3px;
+  transition: opacity 0.15s ease;
 }
 .cart__remove:hover {
   opacity: 0.9;
@@ -1661,10 +1620,16 @@ section {
   border-radius: 12px;
   background: #fff;
   color: var(--ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.cart__nameField input:hover {
+  border-color: rgba(140, 36, 29, 0.45);
 }
 .cart__nameField input:focus {
   outline: none;
   border-color: var(--red-deep);
+  /* soft halo instead of a hard outline — keeps the rounded field shape */
+  box-shadow: 0 0 0 3px rgba(140, 36, 29, 0.14);
 }
 .cart__total {
   display: flex;
@@ -1695,6 +1660,7 @@ section {
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 3px;
+  transition: opacity 0.15s ease;
 }
 .cart__clear:hover {
   opacity: 0.8;
@@ -1713,32 +1679,35 @@ section {
   border: none;
   border-radius: 999px;
   background-color: var(--red-deep);
-  background-image: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.22),
-    rgba(255, 255, 255, 0) 55%
-  );
-  color: var(--cream);
+  color: var(--paper);
   cursor: pointer;
   font: inherit;
-  font-weight: 700;
-  box-shadow: 0 4px 0 #5c0f12, 0 18px 38px -14px rgba(0, 0, 0, 0.6);
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(26, 10, 8, 0.18), 0 16px 32px -12px rgba(26, 10, 8, 0.45);
   transform: translateY(160%);
   opacity: 0;
   transition: transform 0.42s var(--ease-cinematic), opacity 0.3s ease,
-    box-shadow 0.25s ease;
+    box-shadow 0.2s var(--ease-out), background-color 0.18s ease,
+    scale 0.2s var(--ease-out);
 }
 .fab--in {
   transform: none;
   opacity: 1;
 }
 .fab:hover {
-  box-shadow: 0 4px 0 #5c0f12, 0 22px 44px -14px rgba(0, 0, 0, 0.7);
+  background-color: #7a1c16;
+  scale: 1.03;
+  box-shadow: 0 4px 10px rgba(26, 10, 8, 0.16), 0 20px 40px -12px rgba(26, 10, 8, 0.5);
 }
 .fab:active {
-  /* the independent `scale` property, so the squash never fights the
+  /* the independent `scale` property, so the press never fights the
      slide-in transform above */
-  scale: 0.94;
+  scale: 0.97;
+  transition-duration: 0.08s;
+}
+.fab:focus-visible {
+  outline: 2px solid var(--red-deep);
+  outline-offset: 3px;
 }
 .fab__icon {
   width: 22px;
@@ -1835,6 +1804,7 @@ section {
   letter-spacing: 0.02em;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  transition: background-color 0.18s ease;
 }
 .gallery__back svg {
   width: 20px;
@@ -1842,6 +1812,10 @@ section {
 }
 .gallery__back:hover {
   background: rgba(18, 4, 5, 0.72);
+}
+.gallery__back:focus-visible {
+  outline: 2px solid var(--cream);
+  outline-offset: 2px;
 }
 .gallery__intro {
   text-align: center;
